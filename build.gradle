@@ -1,7 +1,19 @@
 apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'maven-publish'
 
 sourceCompatibility = 1.7
+group = 'com.athaydes.easy-jetty'
 version = '0.1'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:0.5"
+    }
+}
 
 repositories {
     mavenCentral()
@@ -16,3 +28,41 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile group: 'org.eclipse.jetty.aggregate', name: 'jetty-client', version: jettyVersion
 }
+
+task sourcesJar( type: Jar, dependsOn: classes ) {
+    from sourceSets.main.allSource
+    classifier "sources"
+    extension "jar"
+}
+
+/* Publishing config */
+
+publishing {
+    publications {
+        mavenJava( MavenPublication ) {
+            from components.java
+            artifact sourcesJar
+        }
+    }
+}
+
+apply plugin: 'com.jfrog.bintray'
+
+bintray {
+    user = project.hasProperty( "bintrayUserName" ) ? bintrayUserName : null
+    key = project.hasProperty( "bintrayApiKey" ) ? bintrayApiKey : null
+    publications = [ "mavenJava" ]
+    publish = true
+    pkg {
+        repo = 'maven'
+        name = 'easy-jetty'
+        licenses = [ 'Apache-2.0' ]
+        desc = 'Makes it really easy to embed a Jetty Web Server'
+        websiteUrl = 'https://github.com/renatoathaydes/easy-jetty'
+        issueTrackerUrl = 'https://github.com/renatoathaydes/easy-jetty/issues'
+        labels = [ 'http', 'webserver', 'jetty', 'java' ]
+        publicDownloadNumbers = true
+    }
+}
+
+bintrayUpload.dependsOn build, sourcesJar
