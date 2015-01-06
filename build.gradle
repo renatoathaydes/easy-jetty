@@ -1,0 +1,18 @@
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+version = '0.1'
+
+repositories {
+    mavenCentral()
+}
+
+def jettyVersion = '7.6.16.v20140903'
+
+dependencies {
+    compile group: 'javax.servlet', name: 'servlet-api', version: '2.5'
+    compile group: 'org.eclipse.jetty.aggregate', name: 'jetty-servlet', version: jettyVersion
+
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    testCompile group: 'org.eclipse.jetty.aggregate', name: 'jetty-client', version: jettyVersion
+}
