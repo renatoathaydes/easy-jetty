@@ -13,6 +13,8 @@ import javax.servlet.Servlet;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.athaydes.easyjetty.UserObjectConverter.handlerFrom;
+
 /**
  * Easy-Jetty Server Builder.
  */
@@ -20,6 +22,7 @@ public class EasyJetty {
 
     private int port = 8080;
     private final Map<String, Class<? extends Servlet>> servlets = new HashMap<>(5);
+    private final Map<String, Handler> handlers = new HashMap<>(5);
     private String contextPath = "/";
     private RequestLog requestLog;
 
@@ -28,7 +31,7 @@ public class EasyJetty {
     /**
      * Set the port to run the Jetty server on.
      *
-     * @param port
+     * @param port port
      * @return this
      */
     public EasyJetty port(int port) {
@@ -40,7 +43,7 @@ public class EasyJetty {
     /**
      * Set the context path for the server.
      *
-     * @param path
+     * @param path server context path
      * @return this
      */
     public EasyJetty contextPath(String path) {
@@ -52,8 +55,8 @@ public class EasyJetty {
     /**
      * Add a servlet.
      *
-     * @param path
-     * @param servlet
+     * @param path    request path
+     * @param servlet the Servlet class which will handle requests to this path
      * @return this
      */
     public EasyJetty servlet(String path, Class<? extends Servlet> servlet) {
@@ -62,9 +65,21 @@ public class EasyJetty {
     }
 
     /**
+     * Add a handler for GET requests to the given path.
+     *
+     * @param path     request path
+     * @param response the response that may be computed for each request to this path
+     * @return this
+     */
+    public EasyJetty onGet(String path, Response response) {
+        handlers.put(path, handlerFrom(response));
+        return this;
+    }
+
+    /**
      * Set the requestLog
      *
-     * @param requestLog
+     * @param requestLog a request log
      * @return this
      */
     public EasyJetty requestLog(RequestLog requestLog) {
@@ -132,7 +147,9 @@ public class EasyJetty {
         }
 
         HandlerCollection allHandler = new HandlerCollection();
-        allHandler.setHandlers(new Handler[]{servletHandler, new DefaultHandler()});
+        allHandler.addHandler(new TrieHandler(handlers));
+        allHandler.addHandler(servletHandler);
+        allHandler.addHandler(new DefaultHandler());
 
         server = new Server(port);
         server.setHandler(allHandler);

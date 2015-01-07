@@ -1,4 +1,7 @@
-package com.athaydes.easyjetty;
+package sample;
+
+import com.athaydes.easyjetty.EasyJetty;
+import com.athaydes.easyjetty.Response;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -12,7 +15,14 @@ import java.io.IOException;
 public class Sample {
 
     public static void main(String[] args) {
-        new EasyJetty().servlet("/hello", HelloServlet.class).start();
+        new EasyJetty()
+                .servlet("/hello", HelloServlet.class)
+                .onGet("/bye", new Response() {
+                    @Override
+                    public void respond(Exchange exchange) throws IOException {
+                        exchange.out.println("Bye bye!");
+                    }
+                }).start();
     }
 
     public static class HelloServlet extends HttpServlet {
