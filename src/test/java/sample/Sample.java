@@ -9,6 +9,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+import static com.athaydes.easyjetty.http.MethodArbiter.Method.GET;
+
 /**
  * Easy-Jetty Sample code.
  */
@@ -17,7 +19,7 @@ public class Sample {
     public static void main(String[] args) {
         new EasyJetty()
                 .servlet("/hello", HelloServlet.class)
-                .onGet("/bye", new Response() {
+                .on(GET, "/bye", new Response() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
                         exchange.out.println("Bye bye!");

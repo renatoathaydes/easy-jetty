@@ -1,5 +1,6 @@
 package com.athaydes.easyjetty;
 
+import com.athaydes.easyjetty.http.MethodArbiter;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -9,14 +10,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-class UserObjectConverter {
+final class UserObjectConverter {
 
-    static Handler handlerFrom(final Response response) {
+    static Handler handlerFrom(final MethodArbiter methodArbiter, final Response response) {
         return new AbstractHandler() {
             @Override
             public void handle(String target, Request baseReq, HttpServletRequest req, HttpServletResponse res)
                     throws IOException, ServletException {
-                if (res.isCommitted()) {
+                if (res.isCommitted() || !methodArbiter.accepts(baseReq.getMethod())) {
                     return;
                 }
                 res.setContentType("text/html;charset=utf-8");

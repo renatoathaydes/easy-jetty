@@ -1,5 +1,6 @@
 package com.athaydes.easyjetty;
 
+import com.athaydes.easyjetty.http.MethodArbiter;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Server;
@@ -65,14 +66,15 @@ public class EasyJetty {
     }
 
     /**
-     * Add a handler for GET requests to the given path.
+     * Add a handler for requests to the given path.
      *
-     * @param path     request path
-     * @param response the response that may be computed for each request to this path
+     * @param methodArbiter arbiter for which methods should be accepted
+     * @param path          request path
+     * @param response      the response that may be computed for each request to this path
      * @return this
      */
-    public EasyJetty onGet(String path, Response response) {
-        handlers.put(path, handlerFrom(response));
+    public EasyJetty on(MethodArbiter methodArbiter, String path, Response response) {
+        handlers.put(path, handlerFrom(methodArbiter, response));
         return this;
     }
 
