@@ -14,6 +14,7 @@ import javax.servlet.Servlet;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.athaydes.easyjetty.PathSanitizer.sanitize;
 import static com.athaydes.easyjetty.UserObjectConverter.handlerFrom;
 
 /**
@@ -49,7 +50,7 @@ public class EasyJetty {
      */
     public EasyJetty contextPath(String path) {
         errorIfServerStarted();
-        this.contextPath = path;
+        this.contextPath = sanitize(path);
         return this;
     }
 
@@ -61,7 +62,7 @@ public class EasyJetty {
      * @return this
      */
     public EasyJetty servlet(String path, Class<? extends Servlet> servlet) {
-        servlets.put(path, servlet);
+        servlets.put(sanitize(path), servlet);
         return this;
     }
 
@@ -74,7 +75,7 @@ public class EasyJetty {
      * @return this
      */
     public EasyJetty on(MethodArbiter methodArbiter, String path, Response response) {
-        handlers.put(path, handlerFrom(methodArbiter, response));
+        handlers.put(sanitize(path), handlerFrom(methodArbiter, response));
         return this;
     }
 
