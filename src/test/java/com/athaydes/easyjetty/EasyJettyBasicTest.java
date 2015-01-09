@@ -30,4 +30,9 @@ public class EasyJettyBasicTest extends EasyJettyTest {
         assertEquals(HttpExchange.STATUS_COMPLETED, exchange2.waitForDone());
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void cannotChangePortWhileServerIsRunning() {
+        easy.port(8085).start().port(8088);
+    }
+
 }
