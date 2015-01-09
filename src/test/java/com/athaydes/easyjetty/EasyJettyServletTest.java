@@ -11,16 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class EasyJettyServletTest extends EasyJettyTest {
-
-    @Test
-    public void serverStarts() {
-        easy.start();
-        assertTrue(easy.isRunning());
-        easy.stop();
-    }
 
     @Test
     public void servletGetsRequests() throws Exception {

@@ -126,6 +126,7 @@ public class EasyJetty {
         if (isRunning()) {
             try {
                 server.stop();
+                server = null;
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
