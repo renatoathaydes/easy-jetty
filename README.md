@@ -1,7 +1,14 @@
 # EasyJetty
 
+> STATUS: currently in early development
+
 EasyJetty makes it trivial to embed [Jetty](http://www.eclipse.org/jetty/),
 a fully functional web server and Servlet container, into your application.
+
+Although EasyJetty provides lots of shortcuts to make the creation of a web server application
+based on Jetty much simpler, you still have the full power of Jetty available where you need it.
+
+See the [documentation](/wiki) for details.
 
 ```java
 import com.athaydes.easyjetty.*;
@@ -33,9 +40,8 @@ curl localhost:8080/hello
 You should see the `Hello World!` message from the server.
 
 
-## Starting the server with a Groovy script
-
-You can also start the server in a Groovy script:
+If you want things to be easier to start and a little less verbose, you can use a [Groovy](http://beta.groovy-lang.org/docs/latest/html/documentation/)
+script instead:
 
 ```groovy
 @Grab('com.athaydes.easy-jetty:easy-jetty:0.1')
@@ -47,8 +53,6 @@ new EasyJetty().on(GET, "/hello",
         { e -> e.out.println 'Hello World!' }).start()
 ```
 
-As you can see, you can declare handlers as simple Groovy closures, making them much less verbose.
-
 Run with (supposing you called the file `easyjetty.groovy`):
 
 ```
@@ -57,8 +61,3 @@ groovy easyjetty.groovy
 
 This will automatically download all dependencies, compile and start the server.
 
-Test with:
-
-```
-curl localhost:8080/hello
-```
