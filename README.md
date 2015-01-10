@@ -12,14 +12,12 @@ import com.athaydes.easyjetty.EasyJetty;
 public class Sample {
 
     public static void main(String[] args) {
-        new EasyJetty().servlet("/hello", HelloServlet.class).start();
-    }
-
-    public static class HelloServlet extends HttpServlet {
-        @Override
-        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-            resp.getOutputStream().println("Hello");
-        }
+        new EasyJetty().on(GET, "/hello", new Response() {
+                @Override
+                public void respond(Exchange exchange) throws IOException {
+                    exchange.out.println("Hello World!");
+                }
+        }).start();
     }
 
 }
@@ -38,26 +36,28 @@ You should see the "Hello" message from the server.
 
 ## Starting the server with a Groovy script
 
-You can also start the server in a Groovy script (called `easyjetty.groovy` for example):
+You can also start the server in a Groovy script:
 
 ```groovy
 @Grab('com.athaydes.easy-jetty:easy-jetty:0.1')
 import com.athaydes.easyjetty.EasyJetty
-import javax.servlet.http.*
 
-new EasyJetty().servlet("/hello", HelloServlet).start()
+import static com.athaydes.easyjetty.http.MethodArbiter.Method.GET
 
-class HelloServlet extends HttpServlet {
-    void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        resp.outputStream.println("Hello")
-    }
-}
+new EasyJetty().on(GET, "/hello",
+        { e -> e.out.println 'Hello World!' }).start()
 ```
 
-Run with:
+Run with (supposing you called the file `easyjetty.groovy`):
 
 ```
 groovy easyjetty.groovy
 ```
 
 This will automatically download all dependencies, compile and start the server.
+
+Test with:
+
+```
+curl localhost:8080/hello
+```

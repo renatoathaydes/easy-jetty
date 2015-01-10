@@ -1,17 +1,7 @@
 @Grab('com.athaydes.easy-jetty:easy-jetty:0.1')
 import com.athaydes.easyjetty.EasyJetty
-import javax.servlet.http.*;
 
-easy = new EasyJetty()
-easy.servlet("/hello", HelloServlet).start()
+import static com.athaydes.easyjetty.http.MethodArbiter.Method.GET
 
-Thread.start {
-    sleep 10_000
-    easy.stop()
-}
-
-class HelloServlet extends HttpServlet {
-    void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        resp.outputStream.println("Hello")
-    }
-}
+new EasyJetty().on(GET, "/hello",
+        { e -> e.out.println 'Hello World!' }).start()
