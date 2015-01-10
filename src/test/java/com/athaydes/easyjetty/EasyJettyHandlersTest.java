@@ -37,8 +37,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
             ContentExchange exchange = exchanges.remove(0);
             assertEquals(HttpExchange.STATUS_COMPLETED, exchange.waitForDone());
 
-            if (method != Method.CONNECT) // not handled by Jetty
-                expectedMethods.add(method.name());
+            expectedMethods.add(method.name());
         }
 
         assertEquals(expectedMethods, handledMethods);
@@ -72,8 +71,35 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
     }
 
     @Test
+    public void customMethodHandlers() throws Exception {
+        easy.on(customMethod("HELLO"), "/hi", new Response() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println("Hello Example");
+            }
+        }).start();
+
+        // WHEN a GET request is sent out
+        ContentExchange exchange = sendReqAndWait("HELLO", "http://localhost:8080/hi");
+
+        // THEN the expected response is provided
+        assertEquals(HttpExchange.STATUS_COMPLETED, exchange.waitForDone());
+        assertEquals("Hello Example", exchange.getResponseContent().trim());
+
+        // WHEN a PUT/POST/DELETE request is sent out
+        ContentExchange putEx = sendReqAndWait("PUT", "http://localhost:8080/hi");
+        ContentExchange postEx = sendReqAndWait("POST", "http://localhost:8080/hi");
+        ContentExchange delEx = sendReqAndWait("DELETE", "http://localhost:8080/hi");
+
+        // THEN the reponse is 405/404/405 respectively
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, putEx.getResponseStatus());
+        assertEquals(HttpStatus.NOT_FOUND_404, postEx.getResponseStatus());
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, delEx.getResponseStatus());
+    }
+
+    @Test
     public void anyOfMethodHandlers() throws Exception {
-        easy.on(anyOf(PATCH, OPTIONS), "/anyof", new Response() {
+        easy.on(anyOf(GET, OPTIONS), "/anyof", new Response() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.out.println("AnyOf");
@@ -81,7 +107,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         }).start();
 
         // WHEN a PATCH/OPTIONS request is sent out
-        ContentExchange patchEx = sendReqAndWait("PATCH", "http://localhost:8080/anyof");
+        ContentExchange patchEx = sendReqAndWait("GET", "http://localhost:8080/anyof");
         ContentExchange optionsEx = sendReqAndWait("OPTIONS", "http://localhost:8080/anyof");
 
         // THEN the expected response is provided
