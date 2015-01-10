@@ -26,6 +26,7 @@ public class EasyJetty {
     private final Map<String, Class<? extends Servlet>> servlets = new HashMap<>(5);
     private final Map<String, Handler> handlers = new HashMap<>(5);
     private String contextPath = "/";
+    private String resourcesLocation;
     private RequestLog requestLog;
 
     private volatile Server server;
@@ -51,6 +52,17 @@ public class EasyJetty {
     public EasyJetty contextPath(String path) {
         errorIfServerStarted();
         this.contextPath = sanitize(path);
+        return this;
+    }
+
+    /**
+     * Set the resources location (ie. directory from which to serve static files).
+     *
+     * @param location of static files
+     * @return this
+     */
+    public EasyJetty resourcesLocation(String location) {
+        this.resourcesLocation = location;
         return this;
     }
 
@@ -137,7 +149,9 @@ public class EasyJetty {
     private void initializeServer() {
         ServletContextHandler servletHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
         servletHandler.setContextPath(contextPath);
-        servletHandler.setResourceBase(".");
+        if (resourcesLocation != null) {
+            servletHandler.setResourceBase(resourcesLocation);
+        }
 
         RequestLogHandler requestLogHandler = new RequestLogHandler();
         if (requestLog != null) {
