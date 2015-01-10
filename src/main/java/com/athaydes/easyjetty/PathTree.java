@@ -31,12 +31,12 @@ public class PathTree<V> {
 
     /**
      * @return a human-friendly String representing the keys and values stored
-     * in this Trie.
+     * in this Tree.
      */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Trie {\n");
+        sb.append("Tree {\n");
         toString(sb, root.children);
         sb.append("}");
         return sb.toString();
