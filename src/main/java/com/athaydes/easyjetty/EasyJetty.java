@@ -14,6 +14,7 @@ import javax.servlet.Servlet;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.athaydes.easyjetty.PathSanitizer.handlerPath;
 import static com.athaydes.easyjetty.PathSanitizer.sanitize;
 import static com.athaydes.easyjetty.UserObjectConverter.handlerFrom;
 
@@ -24,7 +25,7 @@ public class EasyJetty {
 
     private int port = 8080;
     private final Map<String, Class<? extends Servlet>> servlets = new HashMap<>(5);
-    private final Map<String, Handler> handlers = new HashMap<>(5);
+    private final Map<HandlerPath, Handler> handlers = new HashMap<>(5);
     private String contextPath = "/";
     private String resourcesLocation;
     private boolean allowDirectoryListing = true;
@@ -94,7 +95,7 @@ public class EasyJetty {
      * @return this
      */
     public EasyJetty on(MethodArbiter methodArbiter, String path, Response response) {
-        handlers.put(sanitize(path), handlerFrom(methodArbiter, response));
+        handlers.put(handlerPath(path), handlerFrom(methodArbiter, response));
         return this;
     }
 
@@ -174,7 +175,7 @@ public class EasyJetty {
         }
 
         HandlerCollection allHandler = new HandlerCollection();
-        allHandler.addHandler(new TrieHandler(handlers));
+        allHandler.addHandler(new AggregateHandler(handlers));
         allHandler.addHandler(servletHandler);
         allHandler.addHandler(new DefaultHandler());
 

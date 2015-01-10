@@ -9,4 +9,13 @@ class PathSanitizer {
         return path.trim();
     }
 
+    static HandlerPath handlerPath(String path) {
+        return handlerPath(path.split("/"));
+    }
+
+    static HandlerPath handlerPath(String... paths) {
+        // we may want to cache HandlerPaths for most-used paths
+        return new HandlerPath(paths);
+    }
+
 }

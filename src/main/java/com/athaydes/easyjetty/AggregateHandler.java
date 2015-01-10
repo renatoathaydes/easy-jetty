@@ -10,18 +10,19 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
 
-class TrieHandler extends AbstractHandlerContainer {
+import static com.athaydes.easyjetty.PathSanitizer.handlerPath;
 
-    private final Map<String, Handler> handlers;
+class AggregateHandler extends AbstractHandlerContainer {
 
-    public TrieHandler(Map<String, Handler> handlers) {
-        this.handlers = handlers;
+    private final PathTree<Handler> handlers;
+
+    public AggregateHandler(Map<HandlerPath, Handler> handlers) {
+        this.handlers = new PathTree<>(handlers);
     }
-
 
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        Handler handler = handlers.get(target);
+        Handler handler = handlers.get(handlerPath(target));
         if (handler != null) {
             handler.handle(target, baseRequest, request, response);
         }
