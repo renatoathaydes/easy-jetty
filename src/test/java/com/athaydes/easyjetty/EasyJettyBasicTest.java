@@ -4,8 +4,8 @@ import org.eclipse.jetty.client.ContentExchange;
 import org.eclipse.jetty.client.HttpExchange;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assert.*;
 
 public class EasyJettyBasicTest extends EasyJettyTest {
 
@@ -33,6 +33,22 @@ public class EasyJettyBasicTest extends EasyJettyTest {
     @Test(expected = IllegalStateException.class)
     public void cannotChangePortWhileServerIsRunning() {
         easy.port(8085).start().port(8088);
+    }
+
+    @Test
+    public void resourcesLocationIsRespected() throws Exception {
+        easy.resourcesLocation("src/").start();
+        ContentExchange exchange = sendReqAndWait("GET", "http://localhost:8080/");
+        assertEquals(HttpExchange.STATUS_COMPLETED, exchange.waitForDone());
+        assertThat(exchange.getResponseContent(), containsString("test"));
+    }
+
+    @Test
+    public void simpleContextPathIsRespected() throws Exception {
+        easy.resourcesLocation("src/").contextPath("/ctx").start();
+        ContentExchange exchange = sendReqAndWait("GET", "http://localhost:8080/ctx/");
+        assertEquals(HttpExchange.STATUS_COMPLETED, exchange.waitForDone());
+        assertThat(exchange.getResponseContent(), containsString("test"));
     }
 
 }

@@ -10,9 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.athaydes.easyjetty.http.MethodArbiter.Method.anyMethod;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 public class EasyJettyHandlersTest extends EasyJettyTest {
 
@@ -43,22 +41,6 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         }
 
         assertEquals(expectedMethods, handledMethods);
-    }
-
-    @Test
-    public void resourcesLocationIsRespected() throws Exception {
-        easy.resourcesLocation("src/").start();
-        ContentExchange exchange = sendReqAndWait("GET", "http://localhost:8080/");
-        assertEquals(HttpExchange.STATUS_COMPLETED, exchange.waitForDone());
-        assertThat(exchange.getResponseContent(), containsString("test"));
-    }
-
-    @Test
-    public void simpleContextPathIsRespected() throws Exception {
-        easy.resourcesLocation("src/").contextPath("/ctx").start();
-        ContentExchange exchange = sendReqAndWait("GET", "http://localhost:8080/ctx/");
-        assertEquals(HttpExchange.STATUS_COMPLETED, exchange.waitForDone());
-        assertThat(exchange.getResponseContent(), containsString("test"));
     }
 
 }
