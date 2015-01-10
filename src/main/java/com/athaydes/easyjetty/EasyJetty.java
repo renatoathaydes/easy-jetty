@@ -27,6 +27,7 @@ public class EasyJetty {
     private final Map<String, Handler> handlers = new HashMap<>(5);
     private String contextPath = "/";
     private String resourcesLocation;
+    private boolean allowDirectoryListing = true;
     private RequestLog requestLog;
 
     private volatile Server server;
@@ -63,6 +64,12 @@ public class EasyJetty {
      */
     public EasyJetty resourcesLocation(String location) {
         this.resourcesLocation = location;
+        return this;
+    }
+
+    public EasyJetty disableDirectoryListing() {
+        errorIfServerStarted();
+        this.allowDirectoryListing = false;
         return this;
     }
 
@@ -151,6 +158,8 @@ public class EasyJetty {
         servletHandler.setContextPath(contextPath);
         if (resourcesLocation != null) {
             servletHandler.setResourceBase(resourcesLocation);
+            servletHandler.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed",
+                    Boolean.toString(allowDirectoryListing));
         }
 
         RequestLogHandler requestLogHandler = new RequestLogHandler();

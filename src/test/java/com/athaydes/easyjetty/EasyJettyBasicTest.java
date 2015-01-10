@@ -2,6 +2,7 @@ package com.athaydes.easyjetty;
 
 import org.eclipse.jetty.client.ContentExchange;
 import org.eclipse.jetty.client.HttpExchange;
+import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -49,6 +50,14 @@ public class EasyJettyBasicTest extends EasyJettyTest {
         ContentExchange exchange = sendReqAndWait("GET", "http://localhost:8080/ctx/");
         assertEquals(HttpExchange.STATUS_COMPLETED, exchange.waitForDone());
         assertThat(exchange.getResponseContent(), containsString("test"));
+    }
+
+    @Test
+    public void directoryListingOptionIsRespected() throws Exception {
+        easy.resourcesLocation("src/").disableDirectoryListing().start();
+        ContentExchange exchange = sendReqAndWait("GET", "http://localhost:8080/");
+        assertEquals(HttpExchange.STATUS_COMPLETED, exchange.waitForDone());
+        assertEquals(HttpStatus.FORBIDDEN_403, exchange.getResponseStatus());
     }
 
 }
