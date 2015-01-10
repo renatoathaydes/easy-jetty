@@ -1,4 +1,4 @@
-apply plugin: 'java'
+apply plugin: 'groovy'
 apply plugin: 'idea'
 apply plugin: 'maven-publish'
 
@@ -26,6 +26,8 @@ dependencies {
     compile group: 'org.eclipse.jetty.aggregate', name: 'jetty-servlet', version: jettyVersion
 
     testCompile group: 'junit', name: 'junit', version: '4.11'
+    testCompile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.3.9'
+    testCompile group: 'org.spockframework', name: 'spock-core', version: '0.7-groovy-2.0'
     testCompile group: 'org.eclipse.jetty.aggregate', name: 'jetty-client', version: jettyVersion
 }
 
