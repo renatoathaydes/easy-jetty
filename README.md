@@ -8,7 +8,7 @@ a fully functional web server and Servlet container, into your application.
 Although EasyJetty provides lots of shortcuts to make the creation of a web server application
 based on Jetty much simpler, you still have the full power of Jetty available where you need it.
 
-See the [documentation](/wiki) for details.
+See the [documentation](https://github.com/renatoathaydes/easy-jetty/wiki) for details.
 
 ```java
 import com.athaydes.easyjetty.*;
@@ -61,3 +61,5 @@ groovy easyjetty.groovy
 
 This will automatically download all dependencies, compile and start the server.
 
+
+Read the [documentation](https://github.com/renatoathaydes/easy-jetty/wiki) to see what else EasyJetty has to offer.
