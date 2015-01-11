@@ -63,3 +63,9 @@ This will automatically download all dependencies, compile and start the server.
 
 
 Read the [documentation](https://github.com/renatoathaydes/easy-jetty/wiki) to see what else EasyJetty has to offer.
+
+## Code samples
+
+* [Java samples](src/test/java/sample)
+* [Groovy samples](src/demo)
+
