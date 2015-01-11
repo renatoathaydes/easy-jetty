@@ -18,13 +18,13 @@ public class PathTree<V> {
         putAll(map);
     }
 
-    public V put(HandlerPath key, V value) {
+    public PathTreeValue<V> put(HandlerPath key, V value) {
         Objects.requireNonNull(value);
         Node node = get(root, key, true);
         if (node.value == null) {
             size++;
         }
-        V oldValue = node.value;
+        PathTreeValue<V> oldValue = valueFrom(node);
         node.value = value;
         return oldValue;
     }
@@ -96,9 +96,14 @@ public class PathTree<V> {
         return false;
     }
 
-    public V get(HandlerPath key) {
-        Node node = get(root, key, false);
-        return node == null ? null : node.value;
+    public PathTreeValue<V> get(HandlerPath key) {
+        return valueFrom(get(root, key, false));
+    }
+
+    private PathTreeValue<V> valueFrom(Node node) {
+        return node == null || node.value == null ?
+                (PathTreeValue<V>) PathTreeValue.NULL_VALUE :
+                new PathTreeValue<>(node.value, Collections.<String, Object>emptyMap());
     }
 
     private Node get(Node start, HandlerPath key, boolean createIfAbsent) {
@@ -177,6 +182,21 @@ public class PathTree<V> {
             return "Node [key=" + key + ", value=" + value + ", depth=" + depth
                     + "]";
         }
+
+    }
+
+    static class PathTreeValue<V> {
+
+        final Map<String, Object> pathParameters;
+        final V value;
+
+        PathTreeValue(V value, Map<String, Object> pathParameters) {
+            this.value = value;
+            this.pathParameters = pathParameters;
+        }
+
+        static final PathTreeValue<?> NULL_VALUE =
+                new PathTreeValue<>(null, Collections.<String, Object>emptyMap());
 
     }
 

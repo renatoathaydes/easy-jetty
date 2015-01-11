@@ -1,5 +1,6 @@
 package com.athaydes.easyjetty;
 
+import com.athaydes.easyjetty.PathTree.PathTreeValue;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
@@ -22,9 +23,9 @@ class AggregateHandler extends AbstractHandlerContainer {
 
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        Handler handler = handlers.get(handlerPath(target));
-        if (handler != null) {
-            handler.handle(target, baseRequest, request, response);
+        PathTreeValue<Handler> handler = handlers.get(handlerPath(target));
+        if (handler != PathTreeValue.NULL_VALUE) {
+            handler.value.handle(target, baseRequest, request, response);
         }
     }
 

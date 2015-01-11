@@ -2,6 +2,8 @@ package com.athaydes.easyjetty
 
 import spock.lang.Specification
 
+import static com.athaydes.easyjetty.PathTree.PathTreeValue.*
+
 class PathTreeTest extends Specification {
 
 
@@ -12,8 +14,8 @@ class PathTreeTest extends Specification {
         def prev = tree.put(key as HandlerPath, value)
 
         then:
-        prev == null
-        tree.get(key as HandlerPath) == value
+        prev == NULL_VALUE
+        tree.get(key as HandlerPath)?.value == value
 
         where:
         key                         | value
@@ -35,18 +37,18 @@ class PathTreeTest extends Specification {
         ])
 
         expect:
-        tree.get([] as HandlerPath) == 'empty'
-        tree.get(['a'] as HandlerPath) == 'just a'
-        tree.get(['a', 'b'] as HandlerPath) == 'a and b'
-        tree.get(['a', 'b', 'c'] as HandlerPath) == 'a and b and c'
-        tree.get(['c'] as HandlerPath) == 'just c'
-        tree.get(['x', 'y', 'z'] as HandlerPath) == 'x, y, z'
+        tree.get([] as HandlerPath)?.value == 'empty'
+        tree.get(['a'] as HandlerPath)?.value == 'just a'
+        tree.get(['a', 'b'] as HandlerPath)?.value == 'a and b'
+        tree.get(['a', 'b', 'c'] as HandlerPath)?.value == 'a and b and c'
+        tree.get(['c'] as HandlerPath)?.value == 'just c'
+        tree.get(['x', 'y', 'z'] as HandlerPath)?.value == 'x, y, z'
 
-        tree.get(['c', 'd'] as HandlerPath) == null
-        tree.get(['x', 'y'] as HandlerPath) == null
-        tree.get(['x'] as HandlerPath) == null
-        tree.get(['x', 'y', 'z', 'w'] as HandlerPath) == null
-        tree.get(['f'] as HandlerPath) == null
+        tree.get(['c', 'd'] as HandlerPath)?.value == null
+        tree.get(['x', 'y'] as HandlerPath)?.value == null
+        tree.get(['x'] as HandlerPath)?.value == null
+        tree.get(['x', 'y', 'z', 'w'] as HandlerPath)?.value == null
+        tree.get(['f'] as HandlerPath)?.value == null
     }
 
     def "size() specification"() {
