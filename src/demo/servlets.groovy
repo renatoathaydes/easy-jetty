@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletResponse
 
 easy = new EasyJetty()
         .servlet('/hello', HelloServlet)
-        .servlet('/bye', ByeServlet)
+        .servlet('/bye/*', ByeServlet)
         .start()
 
 println "Hit any key to stop the server!"
@@ -25,6 +25,6 @@ class HelloServlet extends HttpServlet {
 class ByeServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        resp.getOutputStream().println("Bye")
+        resp.getOutputStream().println("Bye ${req.pathInfo}")
     }
 }
