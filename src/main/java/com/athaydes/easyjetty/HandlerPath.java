@@ -2,6 +2,7 @@ package com.athaydes.easyjetty;
 
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import static com.athaydes.easyjetty.PathSanitizer.handlerPath;
 
@@ -10,6 +11,9 @@ class HandlerPath {
     private final String[] paths;
 
     HandlerPath(String... paths) {
+        for (String path : paths) {
+            Objects.requireNonNull(path, "All path components must be non-null");
+        }
         this.paths = paths;
     }
 
