@@ -2,20 +2,15 @@ package com.athaydes.easyjetty
 
 import spock.lang.Specification
 
-import static com.athaydes.easyjetty.PathTree.PathTreeValue.*
-
 class PathTreeTest extends Specification {
 
 
-    def tree = new PathTree()
-
-    def "put() specification"() {
+    def "Constructor specification"() {
         when:
-        def prev = tree.put(key as HandlerPath, value)
+        def tree = new PathTree((key as HandlerPath): value)
 
         then:
-        prev == NULL_VALUE
-        tree.get(key as HandlerPath)?.value == value
+        tree.get(key as HandlerPath).value == value
 
         where:
         key                         | value
@@ -25,30 +20,69 @@ class PathTreeTest extends Specification {
         ['hello', 'world', 'cruel'] | 400
     }
 
-    def "get() specification"() {
+    def "get() specification - simple paths"() {
         given:
-        tree.putAll([
+        def tree = new PathTree([
                 ([] as HandlerPath)             : 'empty',
                 (['a'] as HandlerPath)          : 'just a',
                 (['a', 'b'] as HandlerPath)     : 'a and b',
                 (['a', 'b', 'c'] as HandlerPath): 'a and b and c',
                 (['c'] as HandlerPath)          : 'just c',
-                (['x', 'y', 'z'] as HandlerPath): 'x, y, z',
-        ])
+                (['x', 'y', 'z'] as HandlerPath): 'x, y, z'])
 
         expect:
-        tree.get([] as HandlerPath)?.value == 'empty'
-        tree.get(['a'] as HandlerPath)?.value == 'just a'
-        tree.get(['a', 'b'] as HandlerPath)?.value == 'a and b'
-        tree.get(['a', 'b', 'c'] as HandlerPath)?.value == 'a and b and c'
-        tree.get(['c'] as HandlerPath)?.value == 'just c'
-        tree.get(['x', 'y', 'z'] as HandlerPath)?.value == 'x, y, z'
+        tree.get(path as HandlerPath).value == expected
 
-        tree.get(['c', 'd'] as HandlerPath)?.value == null
-        tree.get(['x', 'y'] as HandlerPath)?.value == null
-        tree.get(['x'] as HandlerPath)?.value == null
-        tree.get(['x', 'y', 'z', 'w'] as HandlerPath)?.value == null
-        tree.get(['f'] as HandlerPath)?.value == null
+        where:
+        path                 | expected
+        []                   | 'empty'
+        ['a']                | 'just a'
+        ['a', 'b']           | 'a and b'
+        ['a', 'b', 'c']      | 'a and b and c'
+        ['c']                | 'just c'
+        ['x', 'y', 'z']      | 'x, y, z'
+        ['c', 'd']           | null
+        ['x', 'y']           | null
+        ['x']                | null
+        ['x', 'y', 'z', 'w'] | null
+        ['f']                | null
+    }
+
+    def "get() specification - paths with parameters"() {
+        given:
+        def tree = new PathTree([
+                ([] as HandlerPath)                          : 'empty',
+                (['a'] as HandlerPath)                       : 'just a',
+                ([':param1'] as HandlerPath)                 : 'just param1',
+                (['b'] as HandlerPath)                       : 'just b',
+                (['a', 'b'] as HandlerPath)                  : 'a and b',
+                (['a', ':param2'] as HandlerPath)            : 'a and param2',
+                ([':p1', ':p2', ':p3', ':p4'] as HandlerPath): '4 parameters',
+                (['c', 'd', 'e'] as HandlerPath)             : 'c and d and e',
+                (['c', ':param3', 'e'] as HandlerPath)       : 'c and param3 and e'])
+
+        expect:
+        tree.get(path as HandlerPath).value == expected
+
+        where:
+        path                      | expected
+        []                        | 'empty'
+        ['a']                     | 'just a'
+        ['c']                     | 'just param1'
+        ['b']                     | 'just b'
+        ['a', 'b']                | 'a and b'
+        ['a', 'c']                | 'a and param2'
+        ['a', 'xyz']              | 'a and param2'
+        ['c', 'd', 'e']           | 'c and d and e'
+        ['c', 'x', 'e']           | 'c and param3 and e'
+        ['c', 'a', 'e']           | 'c and param3 and e'
+        ['x', 'y', 'z', 'w']      | '4 parameters'
+        ['x', 'y', 'z', 'w', 'm'] | null
+        ['a', 'x', 'c']           | null
+        ['b', 'x']                | null
+        ['c', 'x']                | null
+        ['c', 'x', 'y']           | null
+
     }
 
     def "size() specification"() {
@@ -58,8 +92,7 @@ class PathTreeTest extends Specification {
         for (handler in handlers) {
             map[handler] = true
         }
-        tree.putAll(map)
-        println tree.toString()
+        def tree = new PathTree(map)
 
         expect:
         tree.size() == expected

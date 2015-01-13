@@ -10,23 +10,35 @@ public class PathTree<V> {
     private int size = 0;
     private final Node root = new Node("");
 
-    public PathTree() {
-
-    }
-
     public PathTree(Map<HandlerPath, V> map) {
         putAll(map);
     }
 
-    public PathTreeValue<V> put(HandlerPath key, V value) {
+    private void putAll(Map<? extends HandlerPath, ? extends V> map) {
+        for (Map.Entry<? extends HandlerPath, ? extends V> entry : map.entrySet()) {
+            put(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void put(HandlerPath key, V value) {
         Objects.requireNonNull(value);
-        Node node = get(root, key, true);
-        if (node.value == null) {
+
+        Node child = root, current;
+        while (key.size() > 0) {
+            current = child;
+            String target = key.head();
+            key = key.tail();
+            child = current.getExact(target);
+            if (child == null) {
+                child = new Node(target);
+                current.addChild(target, child);
+            }
+        }
+
+        if (child.value == null) {
             size++;
         }
-        PathTreeValue<V> oldValue = valueFrom(node);
-        node.value = value;
-        return oldValue;
+        child.value = value;
     }
 
     /**
@@ -37,7 +49,7 @@ public class PathTree<V> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Tree {\n");
-        toString(sb, root.children);
+        toString(sb, root.getChildren());
         sb.append("}");
         return sb.toString();
     }
@@ -60,7 +72,7 @@ public class PathTree<V> {
                 sb.append("value='").append(child.value).append("'");
             }
             sb.append("\n");
-            toString(sb, child.children);
+            toString(sb, child.getChildren());
         }
     }
 
@@ -68,36 +80,8 @@ public class PathTree<V> {
         return size;
     }
 
-    public boolean isEmpty() {
-        return size < 1;
-    }
-
-    public boolean containsKey(HandlerPath key) {
-        Node node = get(root, key, false);
-        return node != null;
-    }
-
-    public boolean containsValue(V value) {
-        if (value == null) {
-            return false;
-        }
-        return containsValue(root, value);
-    }
-
-    private boolean containsValue(Node start, V value) {
-        if (start.value != null && start.value.equals(value)) {
-            return true;
-        }
-        for (Node node : start.children.values()) {
-            if (containsValue(node, value)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public PathTreeValue<V> get(HandlerPath key) {
-        return valueFrom(get(root, key, false));
+        return valueFrom(get(root, key));
     }
 
     private PathTreeValue<V> valueFrom(Node node) {
@@ -106,23 +90,22 @@ public class PathTree<V> {
                 new PathTreeValue<>(node.value, Collections.<String, Object>emptyMap());
     }
 
-    private Node get(Node start, HandlerPath key, boolean createIfAbsent) {
-        if (start == null || key.size() == 0) {
-            return start;
+    private Node get(Node start, HandlerPath key) {
+        Node child = start;
+        if (start != null && key.size() > 0) {
+            String target = key.head();
+            key = key.tail();
+            child = get(start.getExact(target), key);
+            if (child == null || child.value == null) {
+                for (Node paramChild : start.params.values()) {
+                    child = get(paramChild, key);
+                    if (child != null && child.value != null) {
+                        break;
+                    }
+                }
+            }
         }
-        String target = key.head();
-        Node child = start.children.get(target);
-        if (child == null && createIfAbsent) {
-            child = new Node(target);
-            start.addChild(target, child);
-        }
-        return get(child, key.tail(), createIfAbsent);
-    }
-
-    public void putAll(Map<? extends HandlerPath, ? extends V> map) {
-        for (Map.Entry<? extends HandlerPath, ? extends V> entry : map.entrySet()) {
-            put(entry.getKey(), entry.getValue());
-        }
+        return child;
     }
 
     public void clear() {
@@ -140,7 +123,7 @@ public class PathTree<V> {
         if (start.value != null) {
             result.add(start.value);
         }
-        for (Node child : start.children.values()) {
+        for (Node child : start.values()) {
             values(result, child);
         }
     }
@@ -150,7 +133,8 @@ public class PathTree<V> {
 
         String key;
         Node parent;
-        SortedMap<String, Node> children;
+        private SortedMap<String, Node> children;
+        private SortedMap<String, Node> params;
         V value;
         int depth;
 
@@ -161,15 +145,34 @@ public class PathTree<V> {
 
         void clear() {
             this.children = new TreeMap<>();
+            this.params = new TreeMap<>();
             this.value = null;
             this.parent = null;
             this.depth = -1;
         }
 
         public void addChild(String key, Node child) {
-            children.put(key, child);
+            if (PathSanitizer.isParam(key)) {
+                params.put(key, child);
+            } else {
+                children.put(key, child);
+            }
             child.parent = this;
             child.depth = this.depth + 1;
+        }
+
+        public Node getExact(String key) {
+            return children.get(key);
+        }
+
+        public SortedMap<String, Node> getChildren() {
+            SortedMap<String, Node> result = new TreeMap<>(children);
+            result.putAll(params);
+            return result;
+        }
+
+        public Collection<Node> values() {
+            return getChildren().values();
         }
 
         @Override

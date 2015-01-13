@@ -18,4 +18,7 @@ class PathSanitizer {
         return new HandlerPath(paths);
     }
 
+    static boolean isParam(String path) {
+        return path.startsWith(":");
+    }
 }

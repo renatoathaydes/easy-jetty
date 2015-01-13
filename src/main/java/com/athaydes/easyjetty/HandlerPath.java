@@ -43,4 +43,11 @@ class HandlerPath {
     public int hashCode() {
         return Arrays.hashCode(paths);
     }
+
+    @Override
+    public String toString() {
+        return "HandlerPath{" +
+                "paths=" + Arrays.toString(paths) +
+                '}';
+    }
 }
