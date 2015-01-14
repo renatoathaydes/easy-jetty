@@ -30,8 +30,13 @@ public class PathTree<V> {
             key = key.tail();
             child = current.getExact(target);
             if (child == null) {
-                child = new Node(target);
-                current.addChild(target, child);
+                if (PathSanitizer.isParam(target)) {
+                    child = current.getParam(target);
+                }
+                if (child == null) {
+                    child = new Node(target);
+                    current.addChild(target, child);
+                }
             }
         }
 
@@ -163,6 +168,10 @@ public class PathTree<V> {
 
         public Node getExact(String key) {
             return children.get(key);
+        }
+
+        public Node getParam(String param) {
+            return params.get(param);
         }
 
         public SortedMap<String, Node> getChildren() {
