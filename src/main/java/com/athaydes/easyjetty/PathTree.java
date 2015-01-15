@@ -1,6 +1,12 @@
 package com.athaydes.easyjetty;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * A Tree specialized for paths.
@@ -59,7 +65,7 @@ public class PathTree<V> {
         return sb.toString();
     }
 
-    private void toString(StringBuilder sb, SortedMap<String, Node> children) {
+    private void toString(StringBuilder sb, Map<String, Node> children) {
         class Indenter {
             Object indent(int depth) {
                 depth++;
@@ -138,8 +144,8 @@ public class PathTree<V> {
 
         String key;
         Node parent;
-        private SortedMap<String, Node> children;
-        private SortedMap<String, Node> params;
+        private Map<String, Node> children;
+        private Map<String, Node> params;
         V value;
         int depth;
 
@@ -149,8 +155,8 @@ public class PathTree<V> {
         }
 
         void clear() {
-            this.children = new TreeMap<>();
-            this.params = new TreeMap<>();
+            this.children = new HashMap<>();
+            this.params = new HashMap<>();
             this.value = null;
             this.parent = null;
             this.depth = -1;
@@ -174,8 +180,8 @@ public class PathTree<V> {
             return params.get(param);
         }
 
-        public SortedMap<String, Node> getChildren() {
-            SortedMap<String, Node> result = new TreeMap<>(children);
+        public Map<String, Node> getChildren() {
+            Map<String, Node> result = new HashMap<>(children);
             result.putAll(params);
             return result;
         }
