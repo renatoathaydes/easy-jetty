@@ -95,7 +95,8 @@ public class EasyJetty {
      * @return this
      */
     public EasyJetty on(MethodArbiter methodArbiter, String path, Response response) {
-        handlers.put(handlerPath(path), handlerFrom(methodArbiter, response));
+        HandlerPath handlerPath = handlerPath(path);
+        handlers.put(handlerPath, handlerFrom(methodArbiter, response, handlerPath.getParametersByIndex()));
         return this;
     }
 

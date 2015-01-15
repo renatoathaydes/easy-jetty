@@ -9,10 +9,12 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Map;
 
 final class UserObjectConverter {
 
-    static Handler handlerFrom(final MethodArbiter methodArbiter, final Response response) {
+    static Handler handlerFrom(final MethodArbiter methodArbiter, final Response response,
+                               final Map<Integer, String> paramsByIndex) {
         return new AbstractHandler() {
             @Override
             public void handle(String target, Request baseReq, HttpServletRequest req, HttpServletResponse res)
@@ -23,7 +25,8 @@ final class UserObjectConverter {
                 res.setContentType("text/html;charset=utf-8");
                 res.setStatus(HttpServletResponse.SC_OK);
                 baseReq.setHandled(true);
-                response.respond(new Response.Exchange(res.getOutputStream(), req, res, baseReq));
+                Map<String, String> params = PathSanitizer.matchParams(paramsByIndex, baseReq.getPathInfo());
+                response.respond(new Response.Exchange(res.getOutputStream(), req, res, baseReq, params));
             }
         };
     }

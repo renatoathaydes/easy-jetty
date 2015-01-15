@@ -2,6 +2,8 @@ package com.athaydes.easyjetty;
 
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.athaydes.easyjetty.PathSanitizer.handlerPath;
@@ -29,10 +31,24 @@ class HandlerPath {
         return handlerPath(Arrays.copyOfRange(paths, 1, paths.length));
     }
 
+    public Map<Integer, String> getParametersByIndex() {
+        Map<Integer, String> result = new HashMap<>(2);
+        for (int i = 0; i < paths.length; i++) {
+            if (PathSanitizer.isParam(paths[i])) {
+                result.put(i, paths[i]);
+            }
+        }
+        return result;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         HandlerPath that = (HandlerPath) o;
 
