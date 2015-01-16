@@ -1,6 +1,7 @@
 package com.athaydes.easyjetty;
 
 import com.athaydes.easyjetty.http.MethodArbiter.Method;
+import com.athaydes.easyjetty.mapper.ObjectMapper;
 import org.eclipse.jetty.client.ContentExchange;
 import org.eclipse.jetty.client.HttpExchange;
 import org.eclipse.jetty.http.HttpStatus;
@@ -236,6 +237,61 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         // THEN the expected response is provided
         assertEquals("Param something", exchange1.getResponseContent().trim());
         assertEquals("Name john", exchange2.getResponseContent().trim());
+    }
+
+    @Test
+    public void objectMappingTest() throws Exception {
+        class BoolMapper implements ObjectMapper<Boolean> {
+            @Override
+            public String map(Boolean object) {
+                return "Bool: " + object;
+            }
+
+            @Override
+            public Class<Boolean> getMappedType() {
+                return Boolean.class;
+            }
+        }
+
+        class User {
+            String name;
+        }
+
+        class UserMapper implements ObjectMapper<User> {
+            @Override
+            public String map(User object) {
+                return "User: " + object.name;
+            }
+
+            @Override
+            public Class<User> getMappedType() {
+                return User.class;
+            }
+        }
+
+        easy.addMapper(new BoolMapper()).addMapper(new UserMapper())
+                .on(GET, "/user", new Response() {
+                    @Override
+                    public void respond(Exchange exchange) throws IOException {
+                        User user = new User();
+                        user.name = "Mark";
+                        exchange.send(user);
+                    }
+                })
+                .on(GET, "/bool", new Response() {
+                    @Override
+                    public void respond(Exchange exchange) throws IOException {
+                        exchange.send(true);
+                    }
+                }).start();
+
+        // WHEN a GET request is sent out to each endpoint
+        ContentExchange exchange1 = sendReqAndWait("GET", "http://localhost:8080/user");
+        ContentExchange exchange2 = sendReqAndWait("GET", "http://localhost:8080/bool");
+
+        // THEN the expected response is provided
+        assertEquals("User: Mark", exchange1.getResponseContent().trim());
+        assertEquals("Bool: true", exchange2.getResponseContent().trim());
     }
 
 }

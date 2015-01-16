@@ -1,6 +1,7 @@
 package com.athaydes.easyjetty;
 
 import com.athaydes.easyjetty.http.MethodArbiter;
+import com.athaydes.easyjetty.mapper.ObjectMapper;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Server;
@@ -27,6 +28,7 @@ public class EasyJetty {
     private int port = 8080;
     private final Map<String, Class<? extends Servlet>> servlets = new HashMap<>(5);
     private final Map<HandlerPath, Handler> handlers = new HashMap<>(5);
+    private final ObjectSender objectSender = new ObjectSender();
     private String contextPath = "/";
     private String resourcesLocation;
     private boolean allowDirectoryListing = true;
@@ -102,7 +104,8 @@ public class EasyJetty {
                 methodArbiter,
                 response,
                 handlerPath.getParametersByIndex(),
-                defaultContentType));
+                defaultContentType,
+                objectSender));
         return this;
     }
 
@@ -120,6 +123,11 @@ public class EasyJetty {
 
     public EasyJetty defaultContentType(String contentType) {
         this.defaultContentType = contentType;
+        return this;
+    }
+
+    public EasyJetty addMapper(ObjectMapper<?> mapper) {
+        objectSender.addMapper(mapper);
         return this;
     }
 
