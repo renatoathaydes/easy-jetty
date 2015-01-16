@@ -11,6 +11,7 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 
 import javax.servlet.Servlet;
+import java.net.BindException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +31,7 @@ public class EasyJetty {
     private String resourcesLocation;
     private boolean allowDirectoryListing = true;
     private RequestLog requestLog;
+    private String defaultContentType;
 
     private volatile Server server;
 
@@ -96,7 +98,11 @@ public class EasyJetty {
      */
     public EasyJetty on(MethodArbiter methodArbiter, String path, Response response) {
         HandlerPath handlerPath = handlerPath(path);
-        handlers.put(handlerPath, handlerFrom(methodArbiter, response, handlerPath.getParametersByIndex()));
+        handlers.put(handlerPath, handlerFrom(
+                methodArbiter,
+                response,
+                handlerPath.getParametersByIndex(),
+                defaultContentType));
         return this;
     }
 
@@ -109,6 +115,11 @@ public class EasyJetty {
     public EasyJetty requestLog(RequestLog requestLog) {
         errorIfServerStarted();
         this.requestLog = requestLog;
+        return this;
+    }
+
+    public EasyJetty defaultContentType(String contentType) {
+        this.defaultContentType = contentType;
         return this;
     }
 
@@ -136,6 +147,13 @@ public class EasyJetty {
         if (!server.isStarted()) {
             try {
                 server.start();
+            } catch (BindException be) {
+                System.out.println("Could not start the server! " + be.getMessage());
+                try {
+                    server.stop(); // kill the server Thread so the process can die
+                } catch (Exception e) {
+                    // ignore
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

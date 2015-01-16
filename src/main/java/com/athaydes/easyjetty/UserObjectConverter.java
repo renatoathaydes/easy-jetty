@@ -13,8 +13,10 @@ import java.util.Map;
 
 final class UserObjectConverter {
 
-    static Handler handlerFrom(final MethodArbiter methodArbiter, final Response response,
-                               final Map<Integer, String> paramsByIndex) {
+    static Handler handlerFrom(final MethodArbiter methodArbiter,
+                               final Response response,
+                               final Map<Integer, String> paramsByIndex,
+                               final String defaultContentType) {
         return new AbstractHandler() {
             @Override
             public void handle(String target, Request baseReq, HttpServletRequest req, HttpServletResponse res)
@@ -22,7 +24,9 @@ final class UserObjectConverter {
                 if (res.isCommitted() || !methodArbiter.accepts(baseReq.getMethod())) {
                     return;
                 }
-                res.setContentType("text/html;charset=utf-8");
+                if (defaultContentType != null) {
+                    res.setContentType(defaultContentType);
+                }
                 res.setStatus(HttpServletResponse.SC_OK);
                 baseReq.setHandled(true);
                 Map<String, String> params = PathSanitizer.matchParams(paramsByIndex, baseReq.getPathInfo());
