@@ -215,4 +215,27 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         assertNull(error.get());
     }
 
+    @Test
+    public void parametersTest() throws Exception {
+        easy.on(GET, "/:p1", new Response() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.send("Param " + exchange.params.get("p1"));
+            }
+        }).on(GET, "/hi/:name", new Response() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.send("Name " + exchange.params.get("name"));
+            }
+        }).start();
+
+        // WHEN a GET request is sent out to each endpoint
+        ContentExchange exchange1 = sendReqAndWait("GET", "http://localhost:8080/something");
+        ContentExchange exchange2 = sendReqAndWait("GET", "http://localhost:8080/hi/john");
+
+        // THEN the expected response is provided
+        assertEquals("Param something", exchange1.getResponseContent().trim());
+        assertEquals("Name john", exchange2.getResponseContent().trim());
+    }
+
 }
