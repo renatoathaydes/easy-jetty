@@ -30,6 +30,11 @@ public abstract class Response {
         }
     }
 
+    /**
+     * Implement this method to respond to a request.
+     * @param exchange useful resources for an exchange (request/response)
+     * @throws IOException in case the stream is closed or there's a problem accessing some resource
+     */
     abstract public void respond(Exchange exchange) throws IOException;
 
 }
