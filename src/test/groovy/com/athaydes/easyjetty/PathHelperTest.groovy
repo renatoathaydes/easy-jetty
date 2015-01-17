@@ -5,11 +5,11 @@ import spock.lang.Specification
 /**
  *
  */
-class PathSanitizerTest extends Specification {
+class PathHelperTest extends Specification {
 
     def "Can match paths correctly"() {
         when:
-        def result = PathSanitizer.matchParams(paramsByIndex, requestPath)
+        def result = PathHelper.matchParams(paramsByIndex, requestPath)
         then:
         result == expectedResult
 

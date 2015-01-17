@@ -30,7 +30,7 @@ final class UserHandlerCreator {
                 }
                 res.setStatus(HttpServletResponse.SC_OK);
                 baseReq.setHandled(true);
-                Map<String, String> params = PathSanitizer.matchParams(paramsByIndex, baseReq.getPathInfo());
+                Map<String, String> params = PathHelper.matchParams(paramsByIndex, baseReq.getPathInfo());
                 response.respond(new Response.Exchange(res.getOutputStream(), req, res, baseReq, params, objectSender));
             }
         };

@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.athaydes.easyjetty.PathSanitizer.handlerPath;
+import static com.athaydes.easyjetty.PathHelper.handlerPath;
 
 class AggregateHandler extends AbstractHandlerContainer {
 

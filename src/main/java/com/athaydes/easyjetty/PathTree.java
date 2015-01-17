@@ -36,7 +36,7 @@ public class PathTree<V> {
             key = key.tail();
             child = current.getExact(target);
             if (child == null) {
-                if (PathSanitizer.isParam(target)) {
+                if (PathHelper.isParam(target)) {
                     child = current.getParam(target);
                 }
                 if (child == null) {
@@ -163,7 +163,7 @@ public class PathTree<V> {
         }
 
         public void addChild(String key, Node child) {
-            if (PathSanitizer.isParam(key)) {
+            if (PathHelper.isParam(key)) {
                 params.put(key, child);
             } else {
                 children.put(key, child);

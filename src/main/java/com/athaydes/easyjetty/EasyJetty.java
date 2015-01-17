@@ -16,8 +16,8 @@ import java.net.BindException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.athaydes.easyjetty.PathSanitizer.handlerPath;
-import static com.athaydes.easyjetty.PathSanitizer.sanitize;
+import static com.athaydes.easyjetty.PathHelper.handlerPath;
+import static com.athaydes.easyjetty.PathHelper.sanitize;
 import static com.athaydes.easyjetty.UserHandlerCreator.handlerFrom;
 
 /**

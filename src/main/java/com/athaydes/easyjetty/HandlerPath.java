@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.athaydes.easyjetty.PathSanitizer.handlerPath;
+import static com.athaydes.easyjetty.PathHelper.handlerPath;
 
 class HandlerPath {
 
@@ -34,7 +34,7 @@ class HandlerPath {
     public Map<Integer, String> getParametersByIndex() {
         Map<Integer, String> result = new HashMap<>(2);
         for (int i = 0; i < paths.length; i++) {
-            if (PathSanitizer.isParam(paths[i])) {
+            if (PathHelper.isParam(paths[i])) {
                 result.put(i, paths[i]);
             }
         }

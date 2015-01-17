@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-class PathSanitizer {
+class PathHelper {
 
     static String sanitize(String path) {
         if (!path.startsWith("/")) {
