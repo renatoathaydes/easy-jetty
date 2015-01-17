@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
 
-final class UserObjectConverter {
+final class UserHandlerCreator {
 
     static Handler handlerFrom(final MethodArbiter methodArbiter,
                                final Response response,

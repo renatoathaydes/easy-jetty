@@ -18,7 +18,7 @@ import java.util.Map;
 
 import static com.athaydes.easyjetty.PathSanitizer.handlerPath;
 import static com.athaydes.easyjetty.PathSanitizer.sanitize;
-import static com.athaydes.easyjetty.UserObjectConverter.handlerFrom;
+import static com.athaydes.easyjetty.UserHandlerCreator.handlerFrom;
 
 /**
  * Easy-Jetty Server Builder.
