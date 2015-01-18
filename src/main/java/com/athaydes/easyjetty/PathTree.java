@@ -33,7 +33,7 @@ public class PathTree<V> {
             child = current.getExact(target);
             if (child == null) {
                 if (PathHelper.isParam(target)) {
-                    child = current.getParam(target);
+                    child = current.getParam();
                 }
                 if (child == null) {
                     child = new Node(target);
@@ -103,12 +103,7 @@ public class PathTree<V> {
             key = key.tail();
             child = get(start.getExact(target), key);
             if (child == null || child.values.isEmpty()) {
-                for (Node paramChild : start.params.values()) {
-                    child = get(paramChild, key);
-                    if (child != null && !child.values.isEmpty()) {
-                        break;
-                    }
-                }
+                child = get(start.getParam(), key);
             }
         }
         return child;
@@ -138,7 +133,7 @@ public class PathTree<V> {
         String key;
         Node parent;
         private Map<String, Node> children;
-        private Map<String, Node> params;
+        private Node param;
         List<V> values;
         int depth;
 
@@ -148,8 +143,8 @@ public class PathTree<V> {
         }
 
         void clear() {
-            this.children = new HashMap<>();
-            this.params = new HashMap<>();
+            this.children = new HashMap<>(3);
+            this.param = null;
             this.values = new ArrayList<>(2);
             this.parent = null;
             this.depth = -1;
@@ -157,7 +152,9 @@ public class PathTree<V> {
 
         public void addChild(String key, Node child) {
             if (PathHelper.isParam(key)) {
-                params.put(key, child);
+                if (param == null) {
+                    param = child;
+                }
             } else {
                 children.put(key, child);
             }
@@ -169,13 +166,15 @@ public class PathTree<V> {
             return children.get(key);
         }
 
-        public Node getParam(String param) {
-            return params.get(param);
+        public Node getParam() {
+            return param;
         }
 
         public Map<String, Node> getChildren() {
             Map<String, Node> result = new HashMap<>(children);
-            result.putAll(params);
+            if (param != null) {
+                result.put(":", param);
+            }
             return result;
         }
 
