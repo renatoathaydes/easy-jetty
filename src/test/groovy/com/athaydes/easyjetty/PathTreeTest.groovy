@@ -1,28 +1,33 @@
 package com.athaydes.easyjetty
 
+import com.athaydes.easyjetty.http.MethodArbiter
 import spock.lang.Specification
 
 class PathTreeTest extends Specification {
 
 
-    def "Constructor specification"() {
+    def "put() specification"() {
         when:
-        def tree = new PathTree((key as HandlerPath): value)
+        def tree = new PathTree()
+        for (value in values) {
+            tree.put(key as HandlerPath, value)
+        }
 
         then:
-        tree.get(key as HandlerPath).value == value
+        tree.get(key as HandlerPath) == values
 
         where:
-        key                         | value
-        []                          | 0
-        ['a']                       | 1
-        ['a', 'b']                  | 2
-        ['hello', 'world', 'cruel'] | 400
+        key                         | values
+        []                          | [0]
+        ['a']                       | [1, 2, 3]
+        ['a', 'b']                  | [3]
+        ['hello', 'world', 'cruel'] | [400, 400]
     }
 
-    def "Constructor specification (with params)"() {
+    def "put() specification (with params)"() {
         when:
-        def tree = new PathTree(
+        def tree = new PathTree()
+        tree.putAll(
                 ([':a'] as HandlerPath): 1,
                 ([':a', 'b'] as HandlerPath): 2,
                 (['hello', ':world', 'cruel'] as HandlerPath): 400,
@@ -30,20 +35,21 @@ class PathTreeTest extends Specification {
                 ([':hello', ':world', ':cruel'] as HandlerPath): 600)
 
         then:
-        tree.get(queryPath as HandlerPath).value == value
+        tree.get(queryPath as HandlerPath) == values
 
         where:
-        queryPath                | value
-        ['x']                    | 1
-        ['x', 'b']               | 2
-        ['hello', 'b', 'cruel']  | 400
-        ['hello', 'c', 'd']      | 500
-        ['why', 'where', 'when'] | 600
+        queryPath                | values
+        ['x']                    | [1]
+        ['x', 'b']               | [2]
+        ['hello', 'b', 'cruel']  | [400]
+        ['hello', 'c', 'd']      | [500]
+        ['why', 'where', 'when'] | [600]
     }
 
     def "get() specification - simple paths"() {
         given:
-        def tree = new PathTree(
+        def tree = new PathTree()
+        tree.putAll(
                 ([] as HandlerPath): 'empty',
                 (['a'] as HandlerPath): 'just a',
                 (['a', 'b'] as HandlerPath): 'a and b',
@@ -52,26 +58,27 @@ class PathTreeTest extends Specification {
                 (['x', 'y', 'z'] as HandlerPath): 'x, y, z')
 
         expect:
-        tree.get(path as HandlerPath).value == expected
+        tree.get(path as HandlerPath) == expected
 
         where:
         path                 | expected
-        []                   | 'empty'
-        ['a']                | 'just a'
-        ['a', 'b']           | 'a and b'
-        ['a', 'b', 'c']      | 'a and b and c'
-        ['c']                | 'just c'
-        ['x', 'y', 'z']      | 'x, y, z'
-        ['c', 'd']           | null
-        ['x', 'y']           | null
-        ['x']                | null
-        ['x', 'y', 'z', 'w'] | null
-        ['f']                | null
+        []                   | ['empty']
+        ['a']                | ['just a']
+        ['a', 'b']           | ['a and b']
+        ['a', 'b', 'c']      | ['a and b and c']
+        ['c']                | ['just c']
+        ['x', 'y', 'z']      | ['x, y, z']
+        ['c', 'd']           | []
+        ['x', 'y']           | []
+        ['x']                | []
+        ['x', 'y', 'z', 'w'] | []
+        ['f']                | []
     }
 
     def "get() specification - paths with parameters"() {
         given:
-        def tree = new PathTree([
+        def tree = new PathTree()
+        tree.putAll([
                 ([] as HandlerPath)                              : 'empty',
                 (['a'] as HandlerPath)                           : 'just a',
                 ([':param1'] as HandlerPath)                     : 'just param1',
@@ -86,34 +93,34 @@ class PathTreeTest extends Specification {
         ])
 
         expect:
-        tree.get(path as HandlerPath).value == expected
+        tree.get(path as HandlerPath) == expected
 
         where:
         path                      | expected
-        []                        | 'empty'
-        ['a']                     | 'just a'
-        ['c']                     | 'just param1'
-        ['b']                     | 'just b'
-        ['a', 'b']                | 'a and b'
-        ['a', 'c']                | 'a and param2'
-        ['a', 'xyz']              | 'a and param2'
-        ['c', 'd', 'e']           | 'c and d and e'
-        ['c', 'x', 'e']           | 'c and param3 and e'
-        ['c', 'a', 'e']           | 'c and param3 and e'
-        ['x', 'y', 'z', 'w']      | '4 parameters'
-        ['c', 'd', 'e', 'f']      | 'c p3 e p4'
-        ['c', 'x', 'e', 'z']      | 'c p3 e p4'
-        ['c', 'd', 'e', 'z']      | 'c p3 e p4'
-        ['a', 'b', 'd', 'e']      | 'p1 b p2 e'
-        ['x', 'b', 'x', 'e']      | 'p1 b p2 e'
-        ['x', 'y', 'z', 'w', 'm'] | null
-        ['a', 'x', 'c']           | null
-        ['b', 'x']                | null
-        ['c', 'x']                | null
-        ['c', 'x', 'y']           | null
-        ['c', 'd', 'f']           | null
-        ['a', 'd', 'f']           | null
-        ['c', 'x', 'f', 'z', 'e'] | null
+        []                        | ['empty']
+        ['a']                     | ['just a']
+        ['c']                     | ['just param1']
+        ['b']                     | ['just b']
+        ['a', 'b']                | ['a and b']
+        ['a', 'c']                | ['a and param2']
+        ['a', 'xyz']              | ['a and param2']
+        ['c', 'd', 'e']           | ['c and d and e']
+        ['c', 'x', 'e']           | ['c and param3 and e']
+        ['c', 'a', 'e']           | ['c and param3 and e']
+        ['x', 'y', 'z', 'w']      | ['4 parameters']
+        ['c', 'd', 'e', 'f']      | ['c p3 e p4']
+        ['c', 'x', 'e', 'z']      | ['c p3 e p4']
+        ['c', 'd', 'e', 'z']      | ['c p3 e p4']
+        ['a', 'b', 'd', 'e']      | ['p1 b p2 e']
+        ['x', 'b', 'x', 'e']      | ['p1 b p2 e']
+        ['x', 'y', 'z', 'w', 'm'] | []
+        ['a', 'x', 'c']           | []
+        ['b', 'x']                | []
+        ['c', 'x']                | []
+        ['c', 'x', 'y']           | []
+        ['c', 'd', 'f']           | []
+        ['a', 'd', 'f']           | []
+        ['c', 'x', 'f', 'z', 'e'] | []
 
     }
 
@@ -124,7 +131,8 @@ class PathTreeTest extends Specification {
         for (handler in handlers) {
             map[handler] = true
         }
-        def tree = new PathTree(map)
+        def tree = new PathTree()
+        tree.putAll map
 
         expect:
         tree.size() == expected

@@ -16,17 +16,13 @@ public class PathTree<V> {
     private int size = 0;
     private final Node root = new Node("");
 
-    public PathTree(Map<HandlerPath, V> map) {
-        putAll(map);
-    }
-
-    private void putAll(Map<? extends HandlerPath, ? extends V> map) {
-        for (Map.Entry<? extends HandlerPath, ? extends V> entry : map.entrySet()) {
+    void putAll(Map<HandlerPath, ? extends V> map) {
+        for (Map.Entry<HandlerPath, ? extends V> entry : map.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
     }
 
-    private void put(HandlerPath key, V value) {
+    void put(HandlerPath key, V value) {
         Objects.requireNonNull(value);
 
         Node child = root, current;
@@ -46,14 +42,14 @@ public class PathTree<V> {
             }
         }
 
-        if (child.value == null) {
+        if (child.values.isEmpty()) {
             size++;
         }
-        child.value = value;
+        child.values.add(value);
     }
 
     /**
-     * @return a human-friendly String representing the keys and values stored
+     * @return a human-friendly String representing the keys and childrenValues stored
      * in this Tree.
      */
     @Override
@@ -79,8 +75,8 @@ public class PathTree<V> {
         final Indenter indenter = new Indenter();
         for (Node child : children.values()) {
             sb.append(indenter.indent(child.depth)).append("key='").append(child.key).append("' ");
-            if (child.value != null) {
-                sb.append("value='").append(child.value).append("'");
+            if (!child.values.isEmpty()) {
+                sb.append("value='").append(child.values).append("'");
             }
             sb.append("\n");
             toString(sb, child.getChildren());
@@ -91,14 +87,13 @@ public class PathTree<V> {
         return size;
     }
 
-    public PathTreeValue<V> get(HandlerPath key) {
-        return valueFrom(get(root, key));
-    }
-
-    private PathTreeValue<V> valueFrom(Node node) {
-        return node == null || node.value == null ?
-                (PathTreeValue<V>) PathTreeValue.NULL_VALUE :
-                new PathTreeValue<>(node.value, Collections.<String, Object>emptyMap());
+    public List<V> get(HandlerPath key) {
+        Node node = get(root, key);
+        if (node == null) {
+            return Collections.emptyList();
+        } else {
+            return node.values;
+        }
     }
 
     private Node get(Node start, HandlerPath key) {
@@ -107,10 +102,10 @@ public class PathTree<V> {
             String target = key.head();
             key = key.tail();
             child = get(start.getExact(target), key);
-            if (child == null || child.value == null) {
+            if (child == null || child.values.isEmpty()) {
                 for (Node paramChild : start.params.values()) {
                     child = get(paramChild, key);
-                    if (child != null && child.value != null) {
+                    if (child != null && !child.values.isEmpty()) {
                         break;
                     }
                 }
@@ -131,10 +126,8 @@ public class PathTree<V> {
     }
 
     private void values(List<V> result, Node start) {
-        if (start.value != null) {
-            result.add(start.value);
-        }
-        for (Node child : start.values()) {
+        result.addAll(start.values);
+        for (Node child : start.childrenValues()) {
             values(result, child);
         }
     }
@@ -146,7 +139,7 @@ public class PathTree<V> {
         Node parent;
         private Map<String, Node> children;
         private Map<String, Node> params;
-        V value;
+        List<V> values;
         int depth;
 
         public Node(String key) {
@@ -157,7 +150,7 @@ public class PathTree<V> {
         void clear() {
             this.children = new HashMap<>();
             this.params = new HashMap<>();
-            this.value = null;
+            this.values = new ArrayList<>(2);
             this.parent = null;
             this.depth = -1;
         }
@@ -186,7 +179,7 @@ public class PathTree<V> {
             return result;
         }
 
-        public Collection<Node> values() {
+        public Collection<Node> childrenValues() {
             return getChildren().values();
         }
 
@@ -197,24 +190,9 @@ public class PathTree<V> {
 
         @Override
         public String toString() {
-            return "Node [key=" + key + ", value=" + value + ", depth=" + depth
+            return "Node [key=" + key + ", values=" + values + ", depth=" + depth
                     + "]";
         }
-
-    }
-
-    static class PathTreeValue<V> {
-
-        final Map<String, Object> pathParameters;
-        final V value;
-
-        PathTreeValue(V value, Map<String, Object> pathParameters) {
-            this.value = value;
-            this.pathParameters = pathParameters;
-        }
-
-        static final PathTreeValue<?> NULL_VALUE =
-                new PathTreeValue<>(null, Collections.<String, Object>emptyMap());
 
     }
 

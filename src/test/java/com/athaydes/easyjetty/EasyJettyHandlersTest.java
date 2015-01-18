@@ -13,11 +13,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.athaydes.easyjetty.http.MethodArbiter.Method.DELETE;
 import static com.athaydes.easyjetty.http.MethodArbiter.Method.GET;
 import static com.athaydes.easyjetty.http.MethodArbiter.Method.OPTIONS;
-import static com.athaydes.easyjetty.http.MethodArbiter.Method.anyMethod;
-import static com.athaydes.easyjetty.http.MethodArbiter.Method.anyOf;
-import static com.athaydes.easyjetty.http.MethodArbiter.Method.customMethod;
+import static com.athaydes.easyjetty.http.MethodArbiter.Method.POST;
+import static com.athaydes.easyjetty.http.MethodArbiter.Method.PUT;
+import static com.athaydes.easyjetty.http.MethodArbiterFactory.anyMethod;
+import static com.athaydes.easyjetty.http.MethodArbiterFactory.anyOf;
+import static com.athaydes.easyjetty.http.MethodArbiterFactory.singleMethod;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -80,7 +83,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
 
     @Test
     public void customMethodHandlers() throws Exception {
-        easy.on(customMethod("HELLO"), "/hi", new Response() {
+        easy.on(singleMethod("HELLO"), "/hi", new Response() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.out.println("Hello Example");
@@ -131,6 +134,38 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, putEx.getResponseStatus());
         assertEquals(HttpStatus.NOT_FOUND_404, postEx.getResponseStatus());
         assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, delEx.getResponseStatus());
+    }
+
+    @Test
+    public void shouldConsiderMethodAndPath() throws Exception {
+        easy.on(GET, "/path", new Response() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println("GET path");
+            }
+        }).on(PUT, "/path", new Response() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println("PUT path");
+            }
+        }).on(anyOf(POST, DELETE), "/path", new Response() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println("POST or DELETE path");
+            }
+        }).start();
+
+        // WHEN requests are sent out on the same path but different methods
+        ContentExchange getEx = sendReqAndWait("GET", "http://localhost:8080/path");
+        ContentExchange putEx = sendReqAndWait("PUT", "http://localhost:8080/path");
+        ContentExchange postEx = sendReqAndWait("POST", "http://localhost:8080/path");
+        ContentExchange deleteEx = sendReqAndWait("DELETE", "http://localhost:8080/path");
+
+        // THEN the expected responses are provided
+        assertEquals("GET path", getEx.getResponseContent().trim());
+        assertEquals("PUT path", putEx.getResponseContent().trim());
+        assertEquals("POST or DELETE path", postEx.getResponseContent().trim());
+        assertEquals("POST or DELETE path", deleteEx.getResponseContent().trim());
     }
 
     @Test

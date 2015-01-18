@@ -52,7 +52,7 @@ class HandlerPath {
 
         HandlerPath that = (HandlerPath) o;
 
-        return Arrays.equals(paths, that.paths);
+        return Arrays.equals(this.paths, that.paths);
     }
 
     @Override

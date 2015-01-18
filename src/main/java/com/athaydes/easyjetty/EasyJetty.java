@@ -2,7 +2,6 @@ package com.athaydes.easyjetty;
 
 import com.athaydes.easyjetty.http.MethodArbiter;
 import com.athaydes.easyjetty.mapper.ObjectMapper;
-import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.DefaultHandler;
@@ -18,7 +17,6 @@ import java.util.Map;
 
 import static com.athaydes.easyjetty.PathHelper.handlerPath;
 import static com.athaydes.easyjetty.PathHelper.sanitize;
-import static com.athaydes.easyjetty.UserHandlerCreator.handlerFrom;
 
 /**
  * Easy-Jetty Server Builder.
@@ -27,7 +25,7 @@ public class EasyJetty {
 
     private int port = 8080;
     private final Map<String, Class<? extends Servlet>> servlets = new HashMap<>(5);
-    private final Map<HandlerPath, Handler> handlers = new HashMap<>(5);
+    private final AggregateHandler aggregateHandler = new AggregateHandler();
     private final ObjectSender objectSender = new ObjectSender();
     private String contextPath = "/";
     private String resourcesLocation;
@@ -100,7 +98,7 @@ public class EasyJetty {
      */
     public EasyJetty on(MethodArbiter methodArbiter, String path, Response response) {
         HandlerPath handlerPath = handlerPath(path);
-        handlers.put(handlerPath, handlerFrom(
+        aggregateHandler.add(handlerPath, new UserHandler(
                 methodArbiter,
                 response,
                 handlerPath.getParametersByIndex(),
@@ -202,7 +200,7 @@ public class EasyJetty {
         }
 
         HandlerCollection allHandler = new HandlerCollection();
-        allHandler.addHandler(new AggregateHandler(handlers));
+        allHandler.addHandler(aggregateHandler);
         allHandler.addHandler(servletHandler);
         allHandler.addHandler(new DefaultHandler());
 
