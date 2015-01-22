@@ -37,14 +37,12 @@ class PathTree<V> {
                 }
                 if (child == null) {
                     child = new Node(target);
-                    current.addChild(target, child);
+                    current.addChild(child);
                 }
             }
         }
 
-        if (child.values.isEmpty()) {
-            size++;
-        }
+        size++;
         child.values.add(value);
     }
 
@@ -128,13 +126,12 @@ class PathTree<V> {
     }
 
 
-    private class Node implements Comparable<Node> {
+    private static class Node implements Comparable<Node> {
 
-        String key;
-        Node parent;
+        private final String key;
         private Map<String, Node> children;
         private Node param;
-        List<V> values;
+        List values;
         int depth;
 
         public Node(String key) {
@@ -146,19 +143,17 @@ class PathTree<V> {
             this.children = new HashMap<>(3);
             this.param = null;
             this.values = new ArrayList<>(2);
-            this.parent = null;
             this.depth = -1;
         }
 
-        public void addChild(String key, Node child) {
-            if (PathHelper.isParam(key)) {
+        public void addChild(Node child) {
+            if (PathHelper.isParam(child.key)) {
                 if (param == null) {
                     param = child;
                 }
             } else {
-                children.put(key, child);
+                children.put(child.key, child);
             }
-            child.parent = this;
             child.depth = this.depth + 1;
         }
 

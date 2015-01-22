@@ -1,6 +1,5 @@
 package com.athaydes.easyjetty
 
-import com.athaydes.easyjetty.http.MethodArbiter
 import spock.lang.Specification
 
 class PathTreeTest extends Specification {
@@ -79,49 +78,55 @@ class PathTreeTest extends Specification {
         given:
         def tree = new PathTree()
         tree.putAll([
-                ([] as HandlerPath)                              : 'empty',
-                (['a'] as HandlerPath)                           : 'just a',
-                ([':param1'] as HandlerPath)                     : 'just param1',
-                (['b'] as HandlerPath)                           : 'just b',
-                (['a', 'b'] as HandlerPath)                      : 'a and b',
-                (['a', ':param2'] as HandlerPath)                : 'a and param2',
-                ([':p1', ':p2', ':p3', ':p4'] as HandlerPath)    : '4 parameters',
-                (['c', 'd', 'e'] as HandlerPath)                 : 'c and d and e',
-                (['c', ':param3', 'e'] as HandlerPath)           : 'c and param3 and e',
-                (['c', ':param3', 'e', ':param4'] as HandlerPath): 'c p3 e p4',
-                ([':p1', 'b', ':p2', 'e'] as HandlerPath)        : 'p1 b p2 e',
+                ([] as HandlerPath)                               : 'empty',
+                (['a'] as HandlerPath)                            : 'just a',
+                ([':param1'] as HandlerPath)                      : 'just param1',
+                (['b'] as HandlerPath)                            : 'just b',
+                (['a', 'b'] as HandlerPath)                       : 'a and b',
+                (['a', ':param2'] as HandlerPath)                 : 'a and param2',
+                ([':p1', ':p2', ':p3', ':p4'] as HandlerPath)     : '4 parameters',
+                (['c', 'd', 'e'] as HandlerPath)                  : 'c and d and e',
+                (['c', ':param3', 'e'] as HandlerPath)            : 'c and param3 and e',
+                (['c', ':param3', 'e', ':param4'] as HandlerPath) : 'c p3 e p4',
+                ([':p1', 'b', ':p2', 'e'] as HandlerPath)         : 'p1 b p2 e',
+                (['no_name_params', ':', ':', ':'] as HandlerPath): 'no name params',
+                (['a', 'duplicate'] as HandlerPath)               : 'dup1',
         ])
+        and:
+        tree.put(['a', 'duplicate'] as HandlerPath, 'dup2')
 
         expect:
         tree.get(path as HandlerPath) == expected
 
         where:
-        path                      | expected
-        []                        | ['empty']
-        ['a']                     | ['just a']
-        ['c']                     | ['just param1']
-        ['b']                     | ['just b']
-        ['a', 'b']                | ['a and b']
-        ['a', 'c']                | ['a and param2']
-        ['a', 'xyz']              | ['a and param2']
-        ['c', 'd', 'e']           | ['c and d and e']
-        ['c', 'x', 'e']           | ['c and param3 and e']
-        ['c', 'a', 'e']           | ['c and param3 and e']
-        ['x', 'y', 'z', 'w']      | ['4 parameters']
-        ['c', 'd', 'e', 'f']      | ['c p3 e p4']
-        ['c', 'x', 'e', 'z']      | ['c p3 e p4']
-        ['c', 'd', 'e', 'z']      | ['c p3 e p4']
-        ['a', 'b', 'd', 'e']      | ['p1 b p2 e']
-        ['x', 'b', 'x', 'e']      | ['p1 b p2 e']
-        ['x', 'y', 'z', 'w', 'm'] | []
-        ['a', 'x', 'c']           | []
-        ['b', 'x']                | []
-        ['c', 'x']                | []
-        ['c', 'x', 'y']           | []
-        ['c', 'd', 'f']           | []
-        ['a', 'd', 'f']           | []
-        ['c', 'x', 'f', 'z', 'e'] | []
-
+        path                              | expected
+        []                                | ['empty']
+        ['a']                             | ['just a']
+        ['c']                             | ['just param1']
+        ['b']                             | ['just b']
+        ['a', 'b']                        | ['a and b']
+        ['a', 'c']                        | ['a and param2']
+        ['a', 'xyz']                      | ['a and param2']
+        ['c', 'd', 'e']                   | ['c and d and e']
+        ['c', 'x', 'e']                   | ['c and param3 and e']
+        ['c', 'a', 'e']                   | ['c and param3 and e']
+        ['x', 'y', 'z', 'w']              | ['4 parameters']
+        ['c', 'd', 'e', 'f']              | ['c p3 e p4']
+        ['c', 'x', 'e', 'z']              | ['c p3 e p4']
+        ['c', 'd', 'e', 'z']              | ['c p3 e p4']
+        ['a', 'b', 'd', 'e']              | ['p1 b p2 e']
+        ['x', 'b', 'x', 'e']              | ['p1 b p2 e']
+        ['no_name_params', 'a', 'b', 'c'] | ['no name params']
+        ['a', 'duplicate']                | ['dup1', 'dup2']
+        ['x', 'y', 'z', 'w', 'm']         | []
+        ['a', 'x', 'c']                   | []
+        ['b', 'x']                        | []
+        ['c', 'x']                        | []
+        ['c', 'x', 'y']                   | []
+        ['c', 'd', 'f']                   | []
+        ['a', 'd', 'f']                   | []
+        ['c', 'x', 'f', 'z', 'e']         | []
+        ['no_name_params', 'a', 'b']      | []
     }
 
     def "size() specification"() {
