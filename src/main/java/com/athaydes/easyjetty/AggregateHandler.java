@@ -40,4 +40,8 @@ class AggregateHandler extends AbstractHandlerContainer {
     public void add(HandlerPath handlerPath, UserHandler handler) {
         handlers.put(handlerPath, handler);
     }
+
+    public void clear() {
+        handlers.clear();
+    }
 }

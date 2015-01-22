@@ -23,17 +23,30 @@ import static com.athaydes.easyjetty.PathHelper.sanitize;
  */
 public class EasyJetty {
 
-    private int port = 8080;
+    private int port;
     private final Map<String, Class<? extends Servlet>> servlets = new HashMap<>(5);
     private final AggregateHandler aggregateHandler = new AggregateHandler();
     private final ObjectSender objectSender = new ObjectSender();
-    private String contextPath = "/";
+    private String contextPath;
     private String resourcesLocation;
-    private boolean allowDirectoryListing = true;
+    private boolean allowDirectoryListing;
     private RequestLog requestLog;
     private String defaultContentType;
 
     private volatile Server server;
+
+    public EasyJetty() {
+        restoreDefaults();
+    }
+
+    private void restoreDefaults() {
+        port = 8080;
+        contextPath = "/";
+        allowDirectoryListing = true;
+        resourcesLocation = null;
+        requestLog = null;
+        defaultContentType = null;
+    }
 
     /**
      * Set the port to run the Jetty server on.
@@ -167,11 +180,35 @@ public class EasyJetty {
         return this;
     }
 
+    /**
+     * Stop the server.
+     *
+     * To stop the server and clear all configuration, removing all handlers
+     * and servlets, use {@code stop(true)}.
+     * @return this
+     */
     public synchronized EasyJetty stop() {
+        return stop(false);
+    }
+
+    /**
+     * Stop the server.
+     *
+     * @param clearConfig true to clear all configuration, removing all handlers
+     *                    and servlets.
+     * @return this
+     */
+    public synchronized EasyJetty stop(boolean clearConfig) {
         if (isRunning()) {
             try {
                 server.stop();
                 server = null;
+                if (clearConfig) {
+                    servlets.clear();
+                    aggregateHandler.clear();
+                    objectSender.clear();
+                    restoreDefaults();
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

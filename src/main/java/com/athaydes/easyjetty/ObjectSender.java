@@ -48,4 +48,8 @@ class ObjectSender {
         return result;
     }
 
+    public void clear() {
+        mapperByType.clear();
+    }
+
 }
