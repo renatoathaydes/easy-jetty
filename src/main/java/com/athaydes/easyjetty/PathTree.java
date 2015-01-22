@@ -11,7 +11,7 @@ import java.util.Objects;
 /**
  * A Tree specialized for paths.
  */
-public class PathTree<V> {
+class PathTree<V> {
 
     private int size = 0;
     private final Node root = new Node("");
