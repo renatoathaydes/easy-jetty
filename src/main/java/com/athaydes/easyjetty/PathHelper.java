@@ -14,7 +14,7 @@ class PathHelper {
     }
 
     static HandlerPath handlerPath(String path) {
-        return handlerPath(path.split("/"));
+        return handlerPath(sanitize(path).split("/"));
     }
 
     static HandlerPath handlerPath(String... paths) {
