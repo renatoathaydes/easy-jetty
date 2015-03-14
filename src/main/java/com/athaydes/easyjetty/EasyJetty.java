@@ -23,16 +23,13 @@ import static com.athaydes.easyjetty.PathHelper.sanitize;
  */
 public class EasyJetty {
 
-    private int port;
+    private final CanChangeWhenServerNotRunningProperties notRunningProperties = new CanChangeWhenServerNotRunningProperties();
+
     private final Map<String, Class<? extends Servlet>> servlets = new HashMap<>(5);
     private final AggregateHandler aggregateHandler = new AggregateHandler();
     private final ObjectSender objectSender = new ObjectSender();
-    private String contextPath;
-    private String resourcesLocation;
-    private boolean allowDirectoryListing;
-    private RequestLog requestLog;
-    private String defaultContentType;
 
+    private volatile String defaultContentType;
     private volatile Server server;
 
     public EasyJetty() {
@@ -40,11 +37,11 @@ public class EasyJetty {
     }
 
     private void restoreDefaults() {
-        port = 8080;
-        contextPath = "/";
-        allowDirectoryListing = true;
-        resourcesLocation = null;
-        requestLog = null;
+        notRunningProperties.setPort(8080, server);
+        notRunningProperties.setContextPath("/", server);
+        notRunningProperties.setAllowDirectoryListing(true, server);
+        notRunningProperties.setRequestLog(null, server);
+        notRunningProperties.setResourcesLocation(null, server);
         defaultContentType = null;
     }
 
@@ -55,8 +52,7 @@ public class EasyJetty {
      * @return this
      */
     public EasyJetty port(int port) {
-        errorIfServerStarted();
-        this.port = port;
+        notRunningProperties.setPort(port, server);
         return this;
     }
 
@@ -67,8 +63,7 @@ public class EasyJetty {
      * @return this
      */
     public EasyJetty contextPath(String path) {
-        errorIfServerStarted();
-        this.contextPath = sanitize(path);
+        notRunningProperties.setContextPath(sanitize(path), server);
         return this;
     }
 
@@ -79,13 +74,12 @@ public class EasyJetty {
      * @return this
      */
     public EasyJetty resourcesLocation(String location) {
-        this.resourcesLocation = location;
+        notRunningProperties.setResourcesLocation(location, server);
         return this;
     }
 
     public EasyJetty disableDirectoryListing() {
-        errorIfServerStarted();
-        this.allowDirectoryListing = false;
+        notRunningProperties.setAllowDirectoryListing(false, server);
         return this;
     }
 
@@ -127,8 +121,7 @@ public class EasyJetty {
      * @return this
      */
     public EasyJetty requestLog(RequestLog requestLog) {
-        errorIfServerStarted();
-        this.requestLog = requestLog;
+        notRunningProperties.setRequestLog(requestLog, server);
         return this;
     }
 
@@ -140,13 +133,6 @@ public class EasyJetty {
     public EasyJetty addMapper(ObjectMapper<?> mapper) {
         objectSender.addMapper(mapper);
         return this;
-    }
-
-    private void errorIfServerStarted() {
-        final Server current = server;
-        if (current != null && current.isStarted()) {
-            throw new IllegalStateException("Server already started");
-        }
     }
 
     public boolean isRunning() {
@@ -182,9 +168,10 @@ public class EasyJetty {
 
     /**
      * Stop the server.
-     *
+     * <p/>
      * To stop the server and clear all configuration, removing all handlers
      * and servlets, use {@code stop(true)}.
+     *
      * @return this
      */
     public synchronized EasyJetty stop() {
@@ -218,14 +205,16 @@ public class EasyJetty {
 
     private void initializeServer() {
         ServletContextHandler servletHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        servletHandler.setContextPath(contextPath);
+        servletHandler.setContextPath(notRunningProperties.getContextPath());
+        String resourcesLocation = notRunningProperties.getResourcesLocation();
         if (resourcesLocation != null) {
             servletHandler.setResourceBase(resourcesLocation);
             servletHandler.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed",
-                    Boolean.toString(allowDirectoryListing));
+                    Boolean.toString(notRunningProperties.isAllowDirectoryListing()));
         }
 
         RequestLogHandler requestLogHandler = new RequestLogHandler();
+        RequestLog requestLog = notRunningProperties.getRequestLog();
         if (requestLog != null) {
             requestLogHandler.setRequestLog(requestLog);
         }
@@ -241,7 +230,7 @@ public class EasyJetty {
         allHandler.addHandler(servletHandler);
         allHandler.addHandler(new DefaultHandler());
 
-        server = new Server(port);
+        server = new Server(notRunningProperties.getPort());
         server.setHandler(allHandler);
     }
 
