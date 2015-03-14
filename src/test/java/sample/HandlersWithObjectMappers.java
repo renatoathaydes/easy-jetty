@@ -3,14 +3,16 @@ package sample;
 import com.athaydes.easyjetty.EasyJetty;
 import com.athaydes.easyjetty.Response;
 import com.athaydes.easyjetty.mapper.ObjectMapper;
+import org.boon.json.JsonSerializer;
+import org.boon.json.JsonSerializerFactory;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import static com.athaydes.easyjetty.http.MethodArbiter.Method.*;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static org.boon.Maps.map;
 
 /**
  * An example showing how to use ObjectMappers.
@@ -29,40 +31,24 @@ public class HandlersWithObjectMappers {
 
     static int idCount = db.size();
 
-    static class JsonNameMapper implements ObjectMapper<String> {
+    static class BoonMapper implements ObjectMapper<Object> {
+
+        private final JsonSerializer serializer = new JsonSerializerFactory().create();
+
         @Override
-        public String map(String object) {
-            return "{ 'name': '" + object + "' }";
+        public String map(Object object) {
+            return serializer.serialize(object).toString();
         }
 
         @Override
-        public Class<String> getMappedType() {
-            return String.class;
-        }
-    }
-
-    static class JsonNameCollectionMapper implements ObjectMapper<Collection> {
-        @Override
-        public String map(Collection object) {
-            String result = "{\n 'names': [ ";
-            int i = 0;
-            for (Object item : object) {
-                i++;
-                result += "'" + item + "'" + (i == object.size() ? "" : ", ");
-            }
-            return result + " ]\n}";
-        }
-
-        @Override
-        public Class<Collection> getMappedType() {
-            return Collection.class;
+        public Class<Object> getMappedType() {
+            return Object.class;
         }
     }
 
     public static void main(String[] args) {
         new EasyJetty().defaultContentType("text/json;charset=utf-8")
-                .addMapper(new JsonNameMapper())
-                .addMapper(new JsonNameCollectionMapper())
+                .addMapper(new BoonMapper())
                 .on(GET, "/", new Response() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
@@ -79,7 +65,12 @@ public class HandlersWithObjectMappers {
                 .on(GET, "/people/:id", new Response() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
-                        exchange.send(db.get(exchange.params.get("id")));
+                        String name = db.get(exchange.params.get("id"));
+                        if (name == null) {
+                            exchange.response.setStatus(SC_NOT_FOUND);
+                        } else {
+                            exchange.send(name);
+                        }
                     }
                 })
                 .on(DELETE, "/people/:id", new Response() {
@@ -95,8 +86,10 @@ public class HandlersWithObjectMappers {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
                         exchange.response.setContentType("text/plain;charset=utf-8");
-                        db.put("id-" + (++idCount), exchange.params.get("name"));
-                        exchange.send(true);
+                        String name = exchange.params.get("name");
+                        int id = ++idCount;
+                        db.put("id-" + id, name);
+                        exchange.send(map("name", name, "id", id));
                     }
                 })
                 .start();

@@ -29,6 +29,7 @@ dependencies {
     testCompile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.3.9'
     testCompile group: 'org.spockframework', name: 'spock-core', version: '0.7-groovy-2.0'
     testCompile group: 'org.eclipse.jetty.aggregate', name: 'jetty-client', version: jettyVersion
+    testCompile group: 'io.fastjson', name: 'boon', version: '0.32'
 }
 
 task sourcesJar( type: Jar, dependsOn: classes ) {
