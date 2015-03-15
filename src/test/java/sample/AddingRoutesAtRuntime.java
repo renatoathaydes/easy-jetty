@@ -12,7 +12,7 @@ import static com.athaydes.easyjetty.http.MethodArbiter.Method.POST;
 import static org.boon.Maps.map;
 
 /**
- *
+ * This sample shows how it is easy to add/remove handlers at runtime.
  */
 public class AddingRoutesAtRuntime {
 
