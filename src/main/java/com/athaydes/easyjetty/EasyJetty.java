@@ -115,6 +115,21 @@ public class EasyJetty {
     }
 
     /**
+     * Remove a handler that accepts the given methodArbiter for the given path.
+     *
+     * Notice that any handlers which accept the given MethodArbiter will be removed, which means
+     * that more than one handler may be removed, and that aggregate MethodArbiters such as
+     * `anyMethod()` can be removed using any MethodArbiter.
+     * @param methodArbiter methodArbiter
+     * @param path path
+     * @return true if any handler is removed, false otherwise
+     */
+    public boolean remove(MethodArbiter methodArbiter, String path) {
+        HandlerPath handlerPath = handlerPath(path);
+        return aggregateHandler.remove(methodArbiter, handlerPath);
+    }
+
+    /**
      * Set the requestLog
      *
      * @param requestLog a request log

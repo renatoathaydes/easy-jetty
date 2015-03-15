@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.athaydes.easyjetty.PathHelper.handlerPath;
+import static com.athaydes.easyjetty.PathHelper.isParam;
 
 class HandlerPath {
 
@@ -52,12 +53,12 @@ class HandlerPath {
 
         HandlerPath that = (HandlerPath) o;
 
-        return Arrays.equals(this.paths, that.paths);
+        return Arrays.equals(ignoreParamNames(this.paths), ignoreParamNames(that.paths));
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(paths);
+        return Arrays.hashCode(ignoreParamNames(paths));
     }
 
     @Override
@@ -65,5 +66,17 @@ class HandlerPath {
         return "HandlerPath{" +
                 "paths=" + Arrays.toString(paths) +
                 '}';
+    }
+
+    private String[] ignoreParamNames(String[] paths) {
+        String[] result = new String[paths.length];
+        for (int i = 0; i < paths.length; i++) {
+            if (isParam(paths[i])) {
+                result[i] = ":";
+            } else {
+                result[i] = paths[i];
+            }
+        }
+        return result;
     }
 }

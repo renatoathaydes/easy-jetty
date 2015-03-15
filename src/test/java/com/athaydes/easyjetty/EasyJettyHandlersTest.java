@@ -23,6 +23,8 @@ import static com.athaydes.easyjetty.http.MethodArbiterFactory.anyOf;
 import static com.athaydes.easyjetty.http.MethodArbiterFactory.singleMethod;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 public class EasyJettyHandlersTest extends EasyJettyTest {
 
@@ -90,7 +92,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
             }
         }).start();
 
-        // WHEN a GET request is sent out
+        // WHEN a HELLO request is sent out
         ContentExchange exchange = sendReqAndWait("HELLO", "http://localhost:8080/hi");
 
         // THEN the expected response is provided
@@ -117,7 +119,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
             }
         }).start();
 
-        // WHEN a PATCH/OPTIONS request is sent out
+        // WHEN a GET/OPTIONS request is sent out
         ContentExchange patchEx = sendReqAndWait("GET", "http://localhost:8080/anyof");
         ContentExchange optionsEx = sendReqAndWait("OPTIONS", "http://localhost:8080/anyof");
 
@@ -327,6 +329,84 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         // THEN the expected response is provided
         assertEquals("User: Mark", exchange1.getResponseContent().trim());
         assertEquals("Bool: true", exchange2.getResponseContent().trim());
+    }
+
+    @Test
+    public void removeSimplePath() throws Exception {
+        // GIVEN a GET and a PUT handler for the same resource "hi"
+        easy.on(GET, "/hi", new Response() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println("Hi");
+            }
+        }).on(PUT, "/hi", new Response() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println("Hi");
+            }
+        }).start();
+
+        // WHEN the GET handler is removed
+        boolean result = easy.remove(GET, "/hi");
+
+        // THEN at least one handler is removed
+        assertTrue(result);
+
+        // AND requests are sent to each handler
+        ContentExchange getEx = sendReqAndWait("GET", "http://localhost:8080/hi");
+        ContentExchange putEx = sendReqAndWait("PUT", "http://localhost:8080/hi");
+
+        // THEN the GET handler does not respond to requests
+        assertEquals(HttpStatus.NOT_FOUND_404, getEx.getResponseStatus());
+
+        // AND the PUT handler still responds
+        assertEquals(HttpStatus.OK_200, putEx.getResponseStatus());
+    }
+
+    @Test
+    public void removeAnyMethodHandler() throws Exception {
+        // GIVEN a anyMethod handler for the resource "hi"
+        easy.on(anyMethod(), "/hi", new Response() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println("Hi");
+            }
+        }).start();
+
+        // WHEN the GET handler is removed
+        boolean result = easy.remove(GET, "/hi");
+
+        // THEN at least one handler is removed
+        assertTrue(result);
+
+        // AND requests are sent using different methods
+        ContentExchange getEx = sendReqAndWait("GET", "http://localhost:8080/hi");
+        ContentExchange putEx = sendReqAndWait("PUT", "http://localhost:8080/hi");
+
+        // THEN the no handler responds to any request
+        assertEquals(HttpStatus.NOT_FOUND_404, getEx.getResponseStatus());
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, putEx.getResponseStatus());
+    }
+
+    @Test
+    public void removeNonExistingResource() throws Exception {
+        // GIVEN a GET handler for the resource "hi"
+        easy.on(GET, "/hi", new Response() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println("Hi");
+            }
+        }).start();
+
+        // WHEN the GET handler is removed for a non-existing resource
+        boolean result = easy.remove(GET, "/blah");
+
+        // THEN no handler is removed
+        assertFalse(result);
+
+        // AND the GET handler should still work
+        ContentExchange getEx = sendReqAndWait("GET", "http://localhost:8080/hi");
+        assertEquals(HttpStatus.OK_200, getEx.getResponseStatus());
     }
 
 }
