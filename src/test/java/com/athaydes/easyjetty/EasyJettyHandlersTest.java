@@ -2,8 +2,7 @@ package com.athaydes.easyjetty;
 
 import com.athaydes.easyjetty.http.MethodArbiter.Method;
 import com.athaydes.easyjetty.mapper.ObjectMapper;
-import org.eclipse.jetty.client.ContentExchange;
-import org.eclipse.jetty.client.HttpExchange;
+import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Test;
 
@@ -13,18 +12,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.athaydes.easyjetty.http.MethodArbiter.Method.DELETE;
-import static com.athaydes.easyjetty.http.MethodArbiter.Method.GET;
-import static com.athaydes.easyjetty.http.MethodArbiter.Method.OPTIONS;
-import static com.athaydes.easyjetty.http.MethodArbiter.Method.POST;
-import static com.athaydes.easyjetty.http.MethodArbiter.Method.PUT;
-import static com.athaydes.easyjetty.http.MethodArbiterFactory.anyMethod;
-import static com.athaydes.easyjetty.http.MethodArbiterFactory.anyOf;
-import static com.athaydes.easyjetty.http.MethodArbiterFactory.singleMethod;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import static com.athaydes.easyjetty.http.MethodArbiter.Method.*;
+import static com.athaydes.easyjetty.http.MethodArbiterFactory.*;
+import static org.junit.Assert.*;
 
 public class EasyJettyHandlersTest extends EasyJettyTest {
 
@@ -39,16 +29,16 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         }).start();
 
         // WHEN requests are sent to the handler using all methods
-        List<ContentExchange> exchanges = new ArrayList<>();
+        List<ContentResponse> responses = new ArrayList<>();
         for (Method method : Method.values()) {
-            exchanges.add(sendReqAndWait(method.name(), "http://localhost:8080/handleme"));
+            responses.add(sendReqAndWait(method.name(), "http://localhost:8080/handleme"));
         }
 
         // THEN the handler responds to all methods
         List<String> expectedMethods = new ArrayList<>();
         for (Method method : Method.values()) {
-            ContentExchange exchange = exchanges.remove(0);
-            assertEquals(HttpExchange.STATUS_COMPLETED, exchange.waitForDone());
+            ContentResponse response = responses.remove(0);
+            assertEquals(HttpStatus.OK_200, response.getStatus());
 
             expectedMethods.add(method.name());
         }
@@ -66,21 +56,21 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         }).start();
 
         // WHEN a GET request is sent out
-        ContentExchange exchange = sendReqAndWait("GET", "http://localhost:8080/example");
+        ContentResponse response = sendReqAndWait("GET", "http://localhost:8080/example");
 
         // THEN the expected response is provided
-        assertEquals(HttpExchange.STATUS_COMPLETED, exchange.waitForDone());
-        assertEquals("Hello Example", exchange.getResponseContent().trim());
+        assertEquals(HttpStatus.OK_200, response.getStatus());
+        assertEquals("Hello Example", response.getContentAsString().trim());
 
         // WHEN a PUT/POST/DELETE request is sent out
-        ContentExchange putEx = sendReqAndWait("PUT", "http://localhost:8080/example");
-        ContentExchange postEx = sendReqAndWait("POST", "http://localhost:8080/example");
-        ContentExchange delEx = sendReqAndWait("DELETE", "http://localhost:8080/example");
+        ContentResponse putEx = sendReqAndWait("PUT", "http://localhost:8080/example");
+        ContentResponse postEx = sendReqAndWait("POST", "http://localhost:8080/example");
+        ContentResponse delEx = sendReqAndWait("DELETE", "http://localhost:8080/example");
 
         // THEN the reponse is 405/404/405 respectively
-        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, putEx.getResponseStatus());
-        assertEquals(HttpStatus.NOT_FOUND_404, postEx.getResponseStatus());
-        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, delEx.getResponseStatus());
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, putEx.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND_404, postEx.getStatus());
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, delEx.getStatus());
     }
 
     @Test
@@ -93,21 +83,21 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         }).start();
 
         // WHEN a HELLO request is sent out
-        ContentExchange exchange = sendReqAndWait("HELLO", "http://localhost:8080/hi");
+        ContentResponse response = sendReqAndWait("HELLO", "http://localhost:8080/hi");
 
         // THEN the expected response is provided
-        assertEquals(HttpExchange.STATUS_COMPLETED, exchange.waitForDone());
-        assertEquals("Hello Example", exchange.getResponseContent().trim());
+        assertEquals(HttpStatus.OK_200, response.getStatus());
+        assertEquals("Hello Example", response.getContentAsString().trim());
 
         // WHEN a PUT/POST/DELETE request is sent out
-        ContentExchange putEx = sendReqAndWait("PUT", "http://localhost:8080/hi");
-        ContentExchange postEx = sendReqAndWait("POST", "http://localhost:8080/hi");
-        ContentExchange delEx = sendReqAndWait("DELETE", "http://localhost:8080/hi");
+        ContentResponse putEx = sendReqAndWait("PUT", "http://localhost:8080/hi");
+        ContentResponse postEx = sendReqAndWait("POST", "http://localhost:8080/hi");
+        ContentResponse delEx = sendReqAndWait("DELETE", "http://localhost:8080/hi");
 
         // THEN the reponse is 405/404/405 respectively
-        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, putEx.getResponseStatus());
-        assertEquals(HttpStatus.NOT_FOUND_404, postEx.getResponseStatus());
-        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, delEx.getResponseStatus());
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, putEx.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND_404, postEx.getStatus());
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, delEx.getStatus());
     }
 
     @Test
@@ -120,22 +110,22 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         }).start();
 
         // WHEN a GET/OPTIONS request is sent out
-        ContentExchange patchEx = sendReqAndWait("GET", "http://localhost:8080/anyof");
-        ContentExchange optionsEx = sendReqAndWait("OPTIONS", "http://localhost:8080/anyof");
+        ContentResponse patchEx = sendReqAndWait("GET", "http://localhost:8080/anyof");
+        ContentResponse optionsEx = sendReqAndWait("OPTIONS", "http://localhost:8080/anyof");
 
         // THEN the expected response is provided
-        assertEquals("AnyOf", patchEx.getResponseContent().trim());
-        assertEquals("AnyOf", optionsEx.getResponseContent().trim());
+        assertEquals("AnyOf", patchEx.getContentAsString().trim());
+        assertEquals("AnyOf", optionsEx.getContentAsString().trim());
 
         // WHEN a PUT/POST/DELETE request is sent out
-        ContentExchange putEx = sendReqAndWait("PUT", "http://localhost:8080/anyof");
-        ContentExchange postEx = sendReqAndWait("POST", "http://localhost:8080/anyof");
-        ContentExchange delEx = sendReqAndWait("DELETE", "http://localhost:8080/anyof");
+        ContentResponse putEx = sendReqAndWait("PUT", "http://localhost:8080/anyof");
+        ContentResponse postEx = sendReqAndWait("POST", "http://localhost:8080/anyof");
+        ContentResponse delEx = sendReqAndWait("DELETE", "http://localhost:8080/anyof");
 
         // THEN the reponse is 405/404/405 respectively
-        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, putEx.getResponseStatus());
-        assertEquals(HttpStatus.NOT_FOUND_404, postEx.getResponseStatus());
-        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, delEx.getResponseStatus());
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, putEx.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND_404, postEx.getStatus());
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, delEx.getStatus());
     }
 
     @Test
@@ -158,16 +148,16 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         }).start();
 
         // WHEN requests are sent out on the same path but different methods
-        ContentExchange getEx = sendReqAndWait("GET", "http://localhost:8080/path");
-        ContentExchange putEx = sendReqAndWait("PUT", "http://localhost:8080/path");
-        ContentExchange postEx = sendReqAndWait("POST", "http://localhost:8080/path");
-        ContentExchange deleteEx = sendReqAndWait("DELETE", "http://localhost:8080/path");
+        ContentResponse getEx = sendReqAndWait("GET", "http://localhost:8080/path");
+        ContentResponse putEx = sendReqAndWait("PUT", "http://localhost:8080/path");
+        ContentResponse postEx = sendReqAndWait("POST", "http://localhost:8080/path");
+        ContentResponse deleteEx = sendReqAndWait("DELETE", "http://localhost:8080/path");
 
         // THEN the expected responses are provided
-        assertEquals("GET path", getEx.getResponseContent().trim());
-        assertEquals("PUT path", putEx.getResponseContent().trim());
-        assertEquals("POST or DELETE path", postEx.getResponseContent().trim());
-        assertEquals("POST or DELETE path", deleteEx.getResponseContent().trim());
+        assertEquals("GET path", getEx.getContentAsString().trim());
+        assertEquals("PUT path", putEx.getContentAsString().trim());
+        assertEquals("POST or DELETE path", postEx.getContentAsString().trim());
+        assertEquals("POST or DELETE path", deleteEx.getContentAsString().trim());
     }
 
     @Test
@@ -234,13 +224,13 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
             @Override
             boolean run(final Data data) {
                 try {
-                    ContentExchange exchange1 = sendReqAndWait("GET", "http://localhost:8080/index" + data.i + "/" + data.p + data.j);
-                    assertEquals(HttpStatus.OK_200, exchange1.getResponseStatus());
-                    assertEquals("index" + data.i + " j" + data.j + data.p, exchange1.getResponseContent().trim());
+                    ContentResponse exchange1 = sendReqAndWait("GET", "http://localhost:8080/index" + data.i + "/" + data.p + data.j);
+                    assertEquals(HttpStatus.OK_200, exchange1.getStatus());
+                    assertEquals("index" + data.i + " j" + data.j + data.p, exchange1.getContentAsString().trim());
 
-                    ContentExchange ex2 = sendReqAndWait("GET", "http://localhost:8080/sub" + data.i + "/j" + data.j + "/" + data.p);
-                    assertEquals(HttpStatus.OK_200, ex2.getResponseStatus());
-                    assertEquals("sub" + data.i + " j" + data.j + data.p, ex2.getResponseContent().trim());
+                    ContentResponse ex2 = sendReqAndWait("GET", "http://localhost:8080/sub" + data.i + "/j" + data.j + "/" + data.p);
+                    assertEquals(HttpStatus.OK_200, ex2.getStatus());
+                    assertEquals("sub" + data.i + " j" + data.j + data.p, ex2.getContentAsString().trim());
                     return true;
                 } catch (Throwable t) {
                     error.set(t);
@@ -268,12 +258,12 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         }).start();
 
         // WHEN a GET request is sent out to each endpoint
-        ContentExchange exchange1 = sendReqAndWait("GET", "http://localhost:8080/something");
-        ContentExchange exchange2 = sendReqAndWait("GET", "http://localhost:8080/hi/john");
+        ContentResponse exchange1 = sendReqAndWait("GET", "http://localhost:8080/something");
+        ContentResponse exchange2 = sendReqAndWait("GET", "http://localhost:8080/hi/john");
 
         // THEN the expected response is provided
-        assertEquals("Param something", exchange1.getResponseContent().trim());
-        assertEquals("Name john", exchange2.getResponseContent().trim());
+        assertEquals("Param something", exchange1.getContentAsString().trim());
+        assertEquals("Name john", exchange2.getContentAsString().trim());
     }
 
     @Test
@@ -323,12 +313,12 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
                 }).start();
 
         // WHEN a GET request is sent out to each endpoint
-        ContentExchange exchange1 = sendReqAndWait("GET", "http://localhost:8080/user");
-        ContentExchange exchange2 = sendReqAndWait("GET", "http://localhost:8080/bool");
+        ContentResponse exchange1 = sendReqAndWait("GET", "http://localhost:8080/user");
+        ContentResponse exchange2 = sendReqAndWait("GET", "http://localhost:8080/bool");
 
         // THEN the expected response is provided
-        assertEquals("User: Mark", exchange1.getResponseContent().trim());
-        assertEquals("Bool: true", exchange2.getResponseContent().trim());
+        assertEquals("User: Mark", exchange1.getContentAsString().trim());
+        assertEquals("Bool: true", exchange2.getContentAsString().trim());
     }
 
     @Test
@@ -353,14 +343,14 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         assertTrue(result);
 
         // AND requests are sent to each handler
-        ContentExchange getEx = sendReqAndWait("GET", "http://localhost:8080/hi");
-        ContentExchange putEx = sendReqAndWait("PUT", "http://localhost:8080/hi");
+        ContentResponse getEx = sendReqAndWait("GET", "http://localhost:8080/hi");
+        ContentResponse putEx = sendReqAndWait("PUT", "http://localhost:8080/hi");
 
         // THEN the GET handler does not respond to requests
-        assertEquals(HttpStatus.NOT_FOUND_404, getEx.getResponseStatus());
+        assertEquals(HttpStatus.NOT_FOUND_404, getEx.getStatus());
 
         // AND the PUT handler still responds
-        assertEquals(HttpStatus.OK_200, putEx.getResponseStatus());
+        assertEquals(HttpStatus.OK_200, putEx.getStatus());
     }
 
     @Test
@@ -380,12 +370,12 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         assertTrue(result);
 
         // AND requests are sent using different methods
-        ContentExchange getEx = sendReqAndWait("GET", "http://localhost:8080/hi");
-        ContentExchange putEx = sendReqAndWait("PUT", "http://localhost:8080/hi");
+        ContentResponse getEx = sendReqAndWait("GET", "http://localhost:8080/hi");
+        ContentResponse putEx = sendReqAndWait("PUT", "http://localhost:8080/hi");
 
         // THEN the no handler responds to any request
-        assertEquals(HttpStatus.NOT_FOUND_404, getEx.getResponseStatus());
-        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, putEx.getResponseStatus());
+        assertEquals(HttpStatus.NOT_FOUND_404, getEx.getStatus());
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, putEx.getStatus());
     }
 
     @Test
@@ -405,8 +395,8 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         assertFalse(result);
 
         // AND the GET handler should still work
-        ContentExchange getEx = sendReqAndWait("GET", "http://localhost:8080/hi");
-        assertEquals(HttpStatus.OK_200, getEx.getResponseStatus());
+        ContentResponse getEx = sendReqAndWait("GET", "http://localhost:8080/hi");
+        assertEquals(HttpStatus.OK_200, getEx.getStatus());
     }
 
 }

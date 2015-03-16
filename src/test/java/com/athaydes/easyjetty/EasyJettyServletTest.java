@@ -1,7 +1,7 @@
 package com.athaydes.easyjetty;
 
-import org.eclipse.jetty.client.ContentExchange;
-import org.eclipse.jetty.client.HttpExchange;
+import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Test;
 
 import javax.servlet.ServletException;
@@ -19,11 +19,11 @@ public class EasyJettyServletTest extends EasyJettyTest {
         easy.servlet("/hello", HelloServlet.class).start();
 
         // WHEN a request is sent to the servlet
-        ContentExchange exchange = sendReqAndWait("GET", "http://localhost:8080/hello");
+        ContentResponse response = sendReqAndWait("GET", "http://localhost:8080/hello");
 
         // THEN the servlet responds
-        assertEquals(HttpExchange.STATUS_COMPLETED, exchange.waitForDone());
-        assertEquals("Hello", exchange.getResponseContent().trim());
+        assertEquals(HttpStatus.OK_200, response.getStatus());
+        assertEquals("Hello", response.getContentAsString().trim());
     }
 
     public static class HelloServlet extends HttpServlet {
