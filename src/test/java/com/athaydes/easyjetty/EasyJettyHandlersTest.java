@@ -21,7 +21,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
     @Test
     public void anyMethodHandlers() throws Exception {
         final List<String> handledMethods = new ArrayList<>();
-        easy.on(anyMethod(), "/handleme", new Response() {
+        easy.on(anyMethod(), "/handleme", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 handledMethods.add(exchange.baseRequest.getMethod());
@@ -48,7 +48,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
 
     @Test
     public void singleMethodHandlers() throws Exception {
-        easy.on(GET, "/example", new Response() {
+        easy.on(GET, "/example", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.out.println("Hello Example");
@@ -75,7 +75,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
 
     @Test
     public void customMethodHandlers() throws Exception {
-        easy.on(singleMethod("HELLO"), "/hi", new Response() {
+        easy.on(singleMethod("HELLO"), "/hi", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.out.println("Hello Example");
@@ -102,7 +102,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
 
     @Test
     public void anyOfMethodHandlers() throws Exception {
-        easy.on(anyOf(GET, OPTIONS), "/anyof", new Response() {
+        easy.on(anyOf(GET, OPTIONS), "/anyof", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.out.println("AnyOf");
@@ -130,17 +130,17 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
 
     @Test
     public void shouldConsiderMethodAndPath() throws Exception {
-        easy.on(GET, "/path", new Response() {
+        easy.on(GET, "/path", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.out.println("GET path");
             }
-        }).on(PUT, "/path", new Response() {
+        }).on(PUT, "/path", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.out.println("PUT path");
             }
-        }).on(anyOf(POST, DELETE), "/path", new Response() {
+        }).on(anyOf(POST, DELETE), "/path", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.out.println("POST or DELETE path");
@@ -201,12 +201,12 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         new Runner().start(new ToRun() {
             @Override
             boolean run(final Data data) {
-                easy.on(GET, "/index" + data.i + "/" + data.p + data.j, new Response() {
+                easy.on(GET, "/index" + data.i + "/" + data.p + data.j, new Responder() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
                         exchange.out.println("index" + data.i + " j" + data.j + data.p);
                     }
-                }).on(GET, "/sub" + data.i + "/j" + data.j + "/" + data.p, new Response() {
+                }).on(GET, "/sub" + data.i + "/j" + data.j + "/" + data.p, new Responder() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
                         exchange.out.println("sub" + data.i + " j" + data.j + data.p);
@@ -245,12 +245,12 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
 
     @Test
     public void parametersTest() throws Exception {
-        easy.on(GET, "/:p1", new Response() {
+        easy.on(GET, "/:p1", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.send("Param " + exchange.params.get("p1"));
             }
-        }).on(GET, "/hi/:name", new Response() {
+        }).on(GET, "/hi/:name", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.send("Name " + exchange.params.get("name"));
@@ -297,7 +297,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         }
 
         easy.addMapper(new BoolMapper()).addMapper(new UserMapper())
-                .on(GET, "/user", new Response() {
+                .on(GET, "/user", new Responder() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
                         User user = new User();
@@ -305,7 +305,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
                         exchange.send(user);
                     }
                 })
-                .on(GET, "/bool", new Response() {
+                .on(GET, "/bool", new Responder() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
                         exchange.send(true);
@@ -324,12 +324,12 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
     @Test
     public void removeSimplePath() throws Exception {
         // GIVEN a GET and a PUT handler for the same resource "hi"
-        easy.on(GET, "/hi", new Response() {
+        easy.on(GET, "/hi", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.out.println("Hi");
             }
-        }).on(PUT, "/hi", new Response() {
+        }).on(PUT, "/hi", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.out.println("Hi");
@@ -356,7 +356,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
     @Test
     public void removeAnyMethodHandler() throws Exception {
         // GIVEN a anyMethod handler for the resource "hi"
-        easy.on(anyMethod(), "/hi", new Response() {
+        easy.on(anyMethod(), "/hi", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.out.println("Hi");
@@ -381,7 +381,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
     @Test
     public void removeNonExistingResource() throws Exception {
         // GIVEN a GET handler for the resource "hi"
-        easy.on(GET, "/hi", new Response() {
+        easy.on(GET, "/hi", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 exchange.out.println("Hi");

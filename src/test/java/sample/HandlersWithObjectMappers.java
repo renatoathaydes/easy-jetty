@@ -1,7 +1,7 @@
 package sample;
 
 import com.athaydes.easyjetty.EasyJetty;
-import com.athaydes.easyjetty.Response;
+import com.athaydes.easyjetty.Responder;
 import com.athaydes.easyjetty.mapper.ObjectMapper;
 import org.boon.json.JsonSerializer;
 import org.boon.json.JsonSerializerFactory;
@@ -49,20 +49,20 @@ public class HandlersWithObjectMappers {
     public static void main(String[] args) {
         new EasyJetty().defaultContentType("text/json;charset=utf-8")
                 .addMapper(new BoonMapper())
-                .on(GET, "/", new Response() {
+                .on(GET, "/", new Responder() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
                         exchange.response.setContentType("text/plain;charset=utf-8");
                         exchange.send("Try resources /people and /people/id-1");
                     }
                 })
-                .on(GET, "/people", new Response() {
+                .on(GET, "/people", new Responder() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
                         exchange.send(db.values());
                     }
                 })
-                .on(GET, "/people/:id", new Response() {
+                .on(GET, "/people/:id", new Responder() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
                         String name = db.get(exchange.params.get("id"));
@@ -73,7 +73,7 @@ public class HandlersWithObjectMappers {
                         }
                     }
                 })
-                .on(DELETE, "/people/:id", new Response() {
+                .on(DELETE, "/people/:id", new Responder() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
                         String name = db.remove(exchange.params.get("id"));
@@ -82,7 +82,7 @@ public class HandlersWithObjectMappers {
                         }
                     }
                 })
-                .on(PUT, "/people/:name", new Response() {
+                .on(PUT, "/people/:name", new Responder() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
                         exchange.response.setContentType("text/plain;charset=utf-8");

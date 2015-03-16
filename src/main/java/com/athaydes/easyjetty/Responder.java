@@ -9,9 +9,9 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * An user-provided Response to a Request.
+ * An user-provided Responder to a Request.
  */
-public abstract class Response {
+public abstract class Responder {
 
     public static class Exchange {
         public final ServletOutputStream out;

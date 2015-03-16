@@ -1,7 +1,7 @@
 package sample;
 
 import com.athaydes.easyjetty.EasyJetty;
-import com.athaydes.easyjetty.Response;
+import com.athaydes.easyjetty.Responder;
 import org.boon.IO;
 
 import java.io.IOException;
@@ -19,20 +19,20 @@ public class AddingRoutesAtRuntime {
     public static void main(String[] args) {
         final EasyJetty jetty = new EasyJetty();
 
-        jetty.on(POST, "/paths/:path", new Response() {
+        jetty.on(POST, "/paths/:path", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 final String path = exchange.params.get("path");
                 final String response = IO.read(exchange.request.getInputStream(), "utf-8");
                 System.out.println("Adding path " + path + ", Response will be: " + response);
-                jetty.on(GET, path, new Response() {
+                jetty.on(GET, path, new Responder() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
                         exchange.out.println(response);
                     }
                 });
             }
-        }).on(DELETE, "paths/:path", new Response() {
+        }).on(DELETE, "paths/:path", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {
                 final String path = exchange.params.get("path");

@@ -100,14 +100,14 @@ public class EasyJetty {
      *
      * @param methodArbiter arbiter for which methods should be accepted
      * @param path          request path
-     * @param response      the response that may be computed for each request to this path
+     * @param responder      the response that may be computed for each request to this path
      * @return this
      */
-    public EasyJetty on(MethodArbiter methodArbiter, String path, Response response) {
+    public EasyJetty on(MethodArbiter methodArbiter, String path, Responder responder) {
         HandlerPath handlerPath = handlerPath(path);
         aggregateHandler.add(handlerPath, new UserHandler(
                 methodArbiter,
-                response,
+                responder,
                 handlerPath.getParametersByIndex(),
                 defaultContentType,
                 objectSender));

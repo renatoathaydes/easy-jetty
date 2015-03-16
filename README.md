@@ -18,7 +18,7 @@ import static com.athaydes.easyjetty.http.MethodArbiter.Method.GET;
 public class Sample {
 
     public static void main(String[] args) {
-        new EasyJetty().on(GET, "/hello", new Response() {
+        new EasyJetty().on(GET, "/hello", new Responder() {
                 @Override
                 public void respond(Exchange exchange) throws IOException {
                     exchange.out.println("Hello World!");

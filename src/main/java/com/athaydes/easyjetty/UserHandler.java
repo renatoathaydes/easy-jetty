@@ -13,18 +13,18 @@ import java.util.Map;
 final class UserHandler extends AbstractHandler implements EasyJettyHandler {
 
     private final MethodArbiter methodArbiter;
-    private final Response response;
+    private final Responder responder;
     private final Map<Integer, String> paramsByIndex;
     private final String defaultContentType;
     private final ObjectSender objectSender;
 
     public UserHandler(MethodArbiter methodArbiter,
-                       Response response,
+                       Responder responder,
                        Map<Integer, String> paramsByIndex,
                        String defaultContentType,
                        ObjectSender objectSender) {
         this.methodArbiter = methodArbiter;
-        this.response = response;
+        this.responder = responder;
         this.paramsByIndex = paramsByIndex;
         this.defaultContentType = defaultContentType;
         this.objectSender = objectSender;
@@ -42,7 +42,7 @@ final class UserHandler extends AbstractHandler implements EasyJettyHandler {
         res.setStatus(HttpServletResponse.SC_OK);
         baseReq.setHandled(true);
         Map<String, String> params = PathHelper.matchParams(paramsByIndex, baseReq.getPathInfo());
-        response.respond(new Response.Exchange(res.getOutputStream(), req, res, baseReq, params, objectSender));
+        responder.respond(new Responder.Exchange(res.getOutputStream(), req, res, baseReq, params, objectSender));
     }
 
     @Override
