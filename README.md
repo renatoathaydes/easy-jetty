@@ -1,6 +1,6 @@
 # EasyJetty
 
-> STATUS: currently in early development
+> STATUS: ready for experimental use
 
 EasyJetty makes it trivial to embed [Jetty](http://www.eclipse.org/jetty/),
 a fully functional web server and Servlet container, into your application.
