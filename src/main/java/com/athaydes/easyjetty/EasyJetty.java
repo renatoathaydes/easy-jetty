@@ -96,17 +96,19 @@ public class EasyJetty {
     }
 
     /**
-     * Add a handler for requests to the given path.
+     * Add a handler for requests to the given path that accepts the given contentType.
      *
      * @param methodArbiter arbiter for which methods should be accepted
      * @param path          request path
-     * @param responder      the response that may be computed for each request to this path
+     * @param contentType   accepted content type
+     * @param responder     the response that may be computed for each request to this path
      * @return this
      */
-    public EasyJetty on(MethodArbiter methodArbiter, String path, Responder responder) {
+    public EasyJetty on(MethodArbiter methodArbiter, String path, String contentType, Responder responder) {
         HandlerPath handlerPath = handlerPath(path);
         aggregateHandler.add(handlerPath, new UserHandler(
                 methodArbiter,
+                contentType,
                 responder,
                 handlerPath.getParametersByIndex(),
                 defaultContentType,
@@ -115,13 +117,26 @@ public class EasyJetty {
     }
 
     /**
-     * Remove a handler that accepts the given methodArbiter for the given path.
+     * Add a handler for requests to the given path.
      *
+     * @param methodArbiter arbiter for which methods should be accepted
+     * @param path          request path
+     * @param responder     the response that may be computed for each request to this path
+     * @return this
+     */
+    public EasyJetty on(MethodArbiter methodArbiter, String path, Responder responder) {
+        return on(methodArbiter, path, UserHandler.ACCEPT_EVERYTHING, responder);
+    }
+
+    /**
+     * Remove a handler that accepts the given methodArbiter for the given path.
+     * <p/>
      * Notice that any handlers which accept the given MethodArbiter will be removed, which means
      * that more than one handler may be removed, and that aggregate MethodArbiters such as
      * `anyMethod()` can be removed using any MethodArbiter.
+     *
      * @param methodArbiter methodArbiter
-     * @param path path
+     * @param path          path
      * @return true if any handler is removed, false otherwise
      */
     public boolean remove(MethodArbiter methodArbiter, String path) {

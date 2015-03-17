@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.athaydes.easyjetty.http.MethodArbiter.Method.*;
 import static com.athaydes.easyjetty.http.MethodArbiterFactory.*;
+import static org.boon.Maps.map;
 import static org.junit.Assert.*;
 
 public class EasyJettyHandlersTest extends EasyJettyTest {
@@ -158,6 +159,64 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         assertEquals("PUT path", putEx.getContentAsString().trim());
         assertEquals("POST or DELETE path", postEx.getContentAsString().trim());
         assertEquals("POST or DELETE path", deleteEx.getContentAsString().trim());
+    }
+
+    @Test
+    public void shouldConsiderAcceptHeader() throws Exception {
+        easy.on(GET, "/all", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println("ALL");
+            }
+        }).on(GET, "/path", "application/json", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println("JSON");
+            }
+        }).on(GET, "/path", "application/xml", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println("XML");
+            }
+        }).on(anyOf(GET, PUT, POST), "/path", "image/jpeg", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println("JPEG");
+            }
+        }).on(GET, "/path", "audio/mp3,audio/wmf", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println("AUDIO");
+            }
+        }).start();
+
+        // WHEN requests are sent out on the same path but different methods
+        ContentResponse all1 = sendReqAndWait("GET", "http://localhost:8080/all", map("Accept", "application/json"));
+        ContentResponse all2 = sendReqAndWait("GET", "http://localhost:8080/all", map("Accept", "text/*"));
+
+        ContentResponse json = sendReqAndWait("GET", "http://localhost:8080/path", map("Accept", "application/json"));
+        ContentResponse xml = sendReqAndWait("GET", "http://localhost:8080/path", map("Accept", "application/xml"));
+        ContentResponse postJpeg = sendReqAndWait("POST", "http://localhost:8080/path", map("Accept", "image/jpeg"));
+        ContentResponse getJpeg = sendReqAndWait("GET", "http://localhost:8080/path", map("Accept", "image/jpeg"));
+        ContentResponse getAudio = sendReqAndWait("GET", "http://localhost:8080/path", map("Accept", "audio/*; q=0.2, audio/basic"));
+        ContentResponse getGif = sendReqAndWait("GET", "http://localhost:8080/path", map("Accept", "image/gif"));
+
+        // THEN the expected responses are provided
+        assertEquals(HttpStatus.OK_200, all1.getStatus());
+        assertEquals(HttpStatus.OK_200, all2.getStatus());
+        assertEquals(HttpStatus.OK_200, json.getStatus());
+        assertEquals(HttpStatus.OK_200, xml.getStatus());
+        assertEquals(HttpStatus.OK_200, postJpeg.getStatus());
+        assertEquals(HttpStatus.OK_200, getJpeg.getStatus());
+        assertEquals(HttpStatus.OK_200, getAudio.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND_404, getGif.getStatus());
+        assertEquals("ALL", all1.getContentAsString().trim());
+        assertEquals("ALL", all2.getContentAsString().trim());
+        assertEquals("JSON", json.getContentAsString().trim());
+        assertEquals("XML", xml.getContentAsString().trim());
+        assertEquals("JPEG", postJpeg.getContentAsString().trim());
+        assertEquals("JPEG", getJpeg.getContentAsString().trim());
+        assertEquals("AUDIO", getAudio.getContentAsString().trim());
     }
 
     @Test
