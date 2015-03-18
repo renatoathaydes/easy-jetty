@@ -19,16 +19,18 @@ public abstract class Responder {
         public final HttpServletResponse response;
         public final Request baseRequest;
         public final Map<String, String> params;
+        public final String acceptedContentType;
         private final ObjectSender sender;
 
         Exchange(ServletOutputStream out, HttpServletRequest request, HttpServletResponse response,
-                 Request baseRequest, Map<String, String> parameters, ObjectSender objectSender) {
+                 Request baseRequest, Map<String, String> parameters, ObjectSender objectSender, String acceptedContentType) {
             this.out = out;
             this.request = request;
             this.response = response;
             this.baseRequest = baseRequest;
             this.params = parameters;
             this.sender = objectSender;
+            this.acceptedContentType = acceptedContentType;
         }
 
         public void send(Object object) throws IOException {

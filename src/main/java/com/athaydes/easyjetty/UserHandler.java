@@ -10,7 +10,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -34,26 +34,52 @@ final class UserHandler extends AbstractHandler implements EasyJettyHandler {
                        ObjectSender objectSender) {
         this.methodArbiter = methodArbiter;
         this.acceptEverything = acceptedContentType.equals(ACCEPT_EVERYTHING);
-        this.acceptedContentTypes = acceptEverything ? null : Arrays.asList(acceptedContentType.split(","));
         this.responder = responder;
+        this.acceptedContentTypes = acceptEverything ? null : parseAcceptedContentTypes(acceptedContentType);
         this.paramsByIndex = paramsByIndex;
         this.defaultContentType = defaultContentType;
         this.objectSender = objectSender;
     }
 
+    protected static List<String> parseAcceptedContentTypes(String accepted) {
+        List<String> result = new ArrayList<>(2);
+        String[] parts = accepted.split(",");
+        for (String part : parts) {
+            if (part.startsWith("/") || part.endsWith("/")) {
+                throw new RuntimeException("Invalid contentType (must not start/end with '/'): " + accepted);
+            }
+            String[] subParts = part.split("/");
+            if (subParts.length != 2) {
+                throw new RuntimeException("Invalid contentType (does not contain 'type/subtype'): " + accepted);
+            }
+            String[] subTypes = subParts[1].split("\\+");
+            for (String subType : subTypes) {
+                result.add(subParts[0] + "/" + subType);
+            }
+        }
+        return result;
+    }
+
     @Override
     public void handle(String target, Request baseReq, HttpServletRequest req, HttpServletResponse res)
             throws IOException, ServletException {
-        if (res.isCommitted() || !isAcceptedContentType(req.getHeader(HttpHeader.ACCEPT.asString()))) {
+        if (res.isCommitted()) {
             return;
         }
+
+        final String acceptedContentType = getAcceptedContentType(req.getHeader(HttpHeader.ACCEPT.asString()));
+        if (acceptedContentType.isEmpty()) {
+            return;
+        }
+
         if (defaultContentType != null) {
             res.setContentType(defaultContentType);
         }
+
         res.setStatus(HttpServletResponse.SC_OK);
         baseReq.setHandled(true);
         Map<String, String> params = PathHelper.matchParams(paramsByIndex, baseReq.getPathInfo());
-        responder.respond(new Responder.Exchange(res.getOutputStream(), req, res, baseReq, params, objectSender));
+        responder.respond(new Responder.Exchange(res.getOutputStream(), req, res, baseReq, params, objectSender, acceptedContentType));
     }
 
     @Override
@@ -61,9 +87,8 @@ final class UserHandler extends AbstractHandler implements EasyJettyHandler {
         return methodArbiter;
     }
 
-    private boolean isAcceptedContentType(String acceptHeader) {
-        boolean x = acceptEverything || !MIMEParse.bestMatch(acceptedContentTypes, acceptHeader).isEmpty();
-        return x;
+    private String getAcceptedContentType(String acceptHeader) {
+        return acceptEverything ? ACCEPT_EVERYTHING : MIMEParse.bestMatch(acceptedContentTypes, acceptHeader);
     }
 
 }

@@ -190,7 +190,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
             }
         }).start();
 
-        // WHEN requests are sent out on the same path but different methods
+        // WHEN requests are sent out on the same path but different Accept header
         ContentResponse all1 = sendReqAndWait("GET", "http://localhost:8080/all", map("Accept", "application/json"));
         ContentResponse all2 = sendReqAndWait("GET", "http://localhost:8080/all", map("Accept", "text/*"));
 
@@ -217,6 +217,51 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         assertEquals("JPEG", postJpeg.getContentAsString().trim());
         assertEquals("JPEG", getJpeg.getContentAsString().trim());
         assertEquals("AUDIO", getAudio.getContentAsString().trim());
+    }
+
+    @Test
+    public void shouldProvideBestMatchAcceptHeader() throws Exception {
+        // GIVEN
+        final String longAcceptHeader = "audio/mp3, audio/wmf; q=0.5, audio/xxx; q=0.2, " +
+                "audio/zzz; q=0.75, audio/*; q=0.1";
+
+        easy.on(GET, "/audio/1", "audio/wmf+mp3", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println(exchange.acceptedContentType);
+            }
+        }).on(GET, "/audio/2", "audio/wmf", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println(exchange.acceptedContentType);
+            }
+        }).on(GET, "/audio/3", "audio/wmf, audio/zzz, audio/xxx", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println(exchange.acceptedContentType);
+            }
+        }).on(GET, "/audio/4", "audio/what,text/html+xml", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.out.println(exchange.acceptedContentType);
+            }
+        }).start();
+
+        // WHEN requests are sent out on the same path but different Accept headers
+        ContentResponse getAudio1 = sendReqAndWait("GET", "http://localhost:8080/audio/1", map("Accept", longAcceptHeader));
+        ContentResponse getAudio2 = sendReqAndWait("GET", "http://localhost:8080/audio/2", map("Accept", longAcceptHeader));
+        ContentResponse getAudio3 = sendReqAndWait("GET", "http://localhost:8080/audio/3", map("Accept", longAcceptHeader));
+        ContentResponse getAudio4 = sendReqAndWait("GET", "http://localhost:8080/audio/4", map("Accept", longAcceptHeader));
+
+        // THEN the expected responses are provided
+        assertEquals(HttpStatus.OK_200, getAudio1.getStatus());
+        assertEquals(HttpStatus.OK_200, getAudio2.getStatus());
+        assertEquals(HttpStatus.OK_200, getAudio3.getStatus());
+        assertEquals(HttpStatus.OK_200, getAudio4.getStatus());
+        assertEquals("audio/mp3", getAudio1.getContentAsString().trim());
+        assertEquals("audio/wmf", getAudio2.getContentAsString().trim());
+        assertEquals("audio/zzz", getAudio3.getContentAsString().trim());
+        assertEquals("audio/what", getAudio4.getContentAsString().trim());
     }
 
     @Test
