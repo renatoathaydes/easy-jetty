@@ -154,11 +154,12 @@ public final class MIMEParse {
         ParseResults target = parseMediaRange(mimeType);
 
         for (ParseResults range : parsedRanges) {
-            if ((target.type.equals(range.type) || range.type.equals("*") || target.type
-                    .equals("*"))
-                    && (target.subType.equals(range.subType)
-                    || range.subType.equals("*") || target.subType
-                    .equals("*"))) {
+            if ((target.type.equals(range.type) ||
+                    range.type.equals("*") ||
+                    target.type.equals("*")) && (
+                    target.subType.equals(range.subType) ||
+                            range.subType.equals("*") ||
+                            target.subType.equals("*"))) {
                 for (String k : target.params.keySet()) {
                     int paramMatches = 0;
                     if (!k.equals("q") && range.params.containsKey(k)
@@ -227,10 +228,9 @@ public final class MIMEParse {
         for (String r : header.split(","))
             parseResults.add(parseMediaRange(r));
 
-        for (String s : supported) {
-            FitnessAndQuality fitnessAndQuality = fitnessAndQualityParsed(s,
-                    parseResults);
-            fitnessAndQuality.mimeType = s;
+        for (String sup : supported) {
+            FitnessAndQuality fitnessAndQuality = fitnessAndQualityParsed(sup, parseResults);
+            fitnessAndQuality.mimeType = sup;
             weightedMatches.add(fitnessAndQuality);
         }
         Collections.sort(weightedMatches);
