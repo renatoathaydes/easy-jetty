@@ -1,5 +1,8 @@
 package com.athaydes.easyjetty;
 
+import com.athaydes.easyjetty.extension.EasyJettyEvent;
+import com.athaydes.easyjetty.extension.EasyJettyExtension;
+import com.athaydes.easyjetty.extension.event.*;
 import com.athaydes.easyjetty.http.MethodArbiter;
 import com.athaydes.easyjetty.mapper.ObjectMapper;
 import org.eclipse.jetty.server.RequestLog;
@@ -12,7 +15,9 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 
 import javax.servlet.Servlet;
 import java.net.BindException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.athaydes.easyjetty.PathHelper.handlerPath;
@@ -28,6 +33,7 @@ public class EasyJetty {
     private final Map<String, Class<? extends Servlet>> servlets = new HashMap<>(5);
     private final AggregateHandler aggregateHandler = new AggregateHandler();
     private final ObjectSender objectSender = new ObjectSender();
+    private final List<EasyJettyExtension> extensions = new ArrayList<>(2);
 
     private volatile String defaultContentType;
     private volatile Server server;
@@ -43,6 +49,11 @@ public class EasyJetty {
         notRunningProperties.setRequestLog(null, server);
         notRunningProperties.setResourcesLocation(null, server);
         defaultContentType = null;
+    }
+
+    public EasyJetty withExtension(EasyJettyExtension extension) {
+        extensions.add(extension);
+        return this;
     }
 
     /**
@@ -180,17 +191,24 @@ public class EasyJetty {
             initializeServer();
         }
         if (!server.isStarted()) {
+            ErrorEvent errorEvent = null;
             try {
+                fireEvent(new BeforeStartEvent(this));
                 server.start();
+                fireEvent(new AfterStartEvent(this));
             } catch (BindException be) {
-                System.out.println("Could not start the server! " + be.getMessage());
+                errorEvent = new ErrorEvent(this, "Port " + notRunningProperties.getPort() + " is already taken", be);
+            } catch (Exception e) {
+                errorEvent = new ErrorEvent(this, e);
+            }
+            if (errorEvent != null) {
+                fireEvent(errorEvent);
                 try {
                     server.stop(); // kill the server Thread so the process can die
                 } catch (Exception e) {
                     // ignore
                 }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(errorEvent.getThrowable());
             }
         }
         return this;
@@ -218,7 +236,9 @@ public class EasyJetty {
     public synchronized EasyJetty stop(boolean clearConfig) {
         if (isRunning()) {
             try {
+                fireEvent(new BeforeStopEvent(this));
                 server.stop();
+                fireEvent(new AfterStopEvent(this));
                 server = null;
                 if (clearConfig) {
                     servlets.clear();
@@ -227,8 +247,11 @@ public class EasyJetty {
                     restoreDefaults();
                 }
             } catch (Exception e) {
+                fireEvent(new ErrorEvent(this, e));
                 throw new RuntimeException(e);
             }
+        } else {
+            System.out.println("Tried to stop but server not running");
         }
         return this;
     }
@@ -237,9 +260,26 @@ public class EasyJetty {
      * @return the Jetty server if it is running, null otherwise.
      * <p/>
      * A new server instance is created every time the server is started.
+     * <p/>
+     * The Server is provided only to enable users to use features which are not
+     * yet exposed in EasyJetty. However, most users should avoid using the Server directly.
+     * One reason, as an example, is that if the Server is started or stopped directly (rather
+     * than by calling the EasyJetty start/stop methods), EasyJettyExtensions will not have their
+     * callbacks run and may enter an inconsistent state.
+     * Another reason is that the Server instance changes on server re-start.
      */
     public Server getServer() {
         return server;
+    }
+
+    private void fireEvent(EasyJettyEvent event) {
+        for (EasyJettyExtension extension : extensions) {
+            try {
+                extension.handleEvent(event);
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+            }
+        }
     }
 
     private void initializeServer() {
