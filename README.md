@@ -66,6 +66,6 @@ Read the [documentation](https://github.com/renatoathaydes/easy-jetty/wiki) to s
 
 ## Code samples
 
-* [Java samples](src/test/java/sample)
-* [Groovy samples](src/demo)
+* [Java samples](easy-jetty-core/src/test/java/sample)
+* [Groovy samples](easy-jetty-core/src/demo)
 
