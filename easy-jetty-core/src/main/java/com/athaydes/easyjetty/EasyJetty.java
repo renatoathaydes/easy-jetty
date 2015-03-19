@@ -233,6 +233,15 @@ public class EasyJetty {
         return this;
     }
 
+    /**
+     * @return the Jetty server if it is running, null otherwise.
+     * <p/>
+     * A new server instance is created every time the server is started.
+     */
+    public Server getServer() {
+        return server;
+    }
+
     private void initializeServer() {
         ServletContextHandler servletHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
         servletHandler.setContextPath(notRunningProperties.getContextPath());
