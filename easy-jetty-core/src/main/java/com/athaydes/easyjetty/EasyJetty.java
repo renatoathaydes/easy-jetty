@@ -37,6 +37,7 @@ public class EasyJetty {
 
     private volatile String defaultContentType;
     private volatile Server server;
+    private volatile ServletContextHandler servletHandler;
 
     public EasyJetty() {
         restoreDefaults();
@@ -241,6 +242,7 @@ public class EasyJetty {
                 server.stop();
                 fireEvent(new AfterStopEvent(this));
                 server = null;
+                servletHandler = null;
                 if (clearConfig) {
                     servlets.clear();
                     aggregateHandler.clear();
@@ -273,6 +275,13 @@ public class EasyJetty {
         return server;
     }
 
+    /**
+     * @return the current ServletContextHandler if running, null otherwise.
+     */
+    public ServletContextHandler getServletHandler() {
+        return servletHandler;
+    }
+
     private void fireEvent(EasyJettyEvent event) {
         for (EasyJettyExtension extension : extensions) {
             try {
@@ -284,7 +293,7 @@ public class EasyJetty {
     }
 
     private void initializeServer() {
-        ServletContextHandler servletHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        servletHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
         servletHandler.setContextPath(notRunningProperties.getContextPath());
         String resourcesLocation = notRunningProperties.getResourcesLocation();
         if (resourcesLocation != null) {
