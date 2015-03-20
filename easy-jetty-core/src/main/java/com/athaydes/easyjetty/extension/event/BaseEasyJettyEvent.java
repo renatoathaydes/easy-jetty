@@ -6,7 +6,7 @@ import com.athaydes.easyjetty.extension.EasyJettyEvent;
 /**
  *
  */
-public class BaseEasyJettyEvent implements EasyJettyEvent {
+public abstract class BaseEasyJettyEvent implements EasyJettyEvent {
 
     private final long timestamp;
     private final EasyJetty easyJetty;

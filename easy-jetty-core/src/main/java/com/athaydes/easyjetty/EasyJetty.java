@@ -53,6 +53,7 @@ public class EasyJetty {
 
     public EasyJetty withExtension(EasyJettyExtension extension) {
         extensions.add(extension);
+        fireEvent(new ExtensionAddedEvent(this, extension));
         return this;
     }
 
