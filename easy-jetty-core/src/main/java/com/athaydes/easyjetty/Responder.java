@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * An user-provided Responder to a Request.
  */
-public abstract class Responder {
+public interface Responder {
 
     public static class Exchange {
         public final ServletOutputStream out;
