@@ -28,4 +28,8 @@ class ObjectSender {
         this.mapperGroup = DEFAULT_MAPPER_GROUP;
     }
 
+    ObjectMapperGroup getObjectMapperGroup() {
+        return mapperGroup;
+    }
+
 }

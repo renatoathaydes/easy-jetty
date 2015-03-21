@@ -178,6 +178,10 @@ public class EasyJetty {
         return this;
     }
 
+    public ObjectMapperGroup getObjectMapperGroup() {
+        return objectSender.getObjectMapperGroup();
+    }
+
     public boolean isRunning() {
         final Server current = server;
         return current != null && current.isRunning();
