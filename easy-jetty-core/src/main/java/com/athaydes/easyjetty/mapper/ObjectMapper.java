@@ -1,7 +1,7 @@
 package com.athaydes.easyjetty.mapper;
 
 /**
- * A mapper between user-defined Objects and Strings
+ * A mapper from user-defined Objects to Strings
  * (which will be sent in responses from the server).
  */
 public interface ObjectMapper<T> {

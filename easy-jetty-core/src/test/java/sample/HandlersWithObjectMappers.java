@@ -3,6 +3,7 @@ package sample;
 import com.athaydes.easyjetty.EasyJetty;
 import com.athaydes.easyjetty.Responder;
 import com.athaydes.easyjetty.mapper.ObjectMapper;
+import com.athaydes.easyjetty.mapper.ObjectMapperGroup;
 import org.boon.json.JsonSerializer;
 import org.boon.json.JsonSerializerFactory;
 
@@ -48,7 +49,8 @@ public class HandlersWithObjectMappers {
 
     public static void main(String[] args) {
         new EasyJetty().defaultContentType("text/json;charset=utf-8")
-                .addMapper(new BoonMapper())
+                .withMapperGroup(new ObjectMapperGroup(true, true)
+                        .withMappers(new BoonMapper()))
                 .on(GET, "/", new Responder() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {

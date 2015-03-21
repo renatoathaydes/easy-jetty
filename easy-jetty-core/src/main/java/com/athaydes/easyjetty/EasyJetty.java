@@ -4,7 +4,7 @@ import com.athaydes.easyjetty.extension.EasyJettyEvent;
 import com.athaydes.easyjetty.extension.EasyJettyExtension;
 import com.athaydes.easyjetty.extension.event.*;
 import com.athaydes.easyjetty.http.MethodArbiter;
-import com.athaydes.easyjetty.mapper.ObjectMapper;
+import com.athaydes.easyjetty.mapper.ObjectMapperGroup;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.DefaultHandler;
@@ -173,8 +173,8 @@ public class EasyJetty {
         return this;
     }
 
-    public EasyJetty addMapper(ObjectMapper<?> mapper) {
-        objectSender.addMapper(mapper);
+    public EasyJetty withMapperGroup(ObjectMapperGroup mapperGroup) {
+        objectSender.setMapperGroup(mapperGroup);
         return this;
     }
 

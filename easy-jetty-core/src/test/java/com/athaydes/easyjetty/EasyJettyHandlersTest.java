@@ -2,6 +2,7 @@ package com.athaydes.easyjetty;
 
 import com.athaydes.easyjetty.http.MethodArbiter.Method;
 import com.athaydes.easyjetty.mapper.ObjectMapper;
+import com.athaydes.easyjetty.mapper.ObjectMapperGroup;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Test;
@@ -356,7 +357,8 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
             }
         }
 
-        easy.addMapper(new BoolMapper()).addMapper(new UserMapper())
+        easy.withMapperGroup(new ObjectMapperGroup(true, true)
+                .withMappers(new BoolMapper(), new UserMapper()))
                 .on(GET, "/user", new Responder() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
