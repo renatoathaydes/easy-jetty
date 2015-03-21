@@ -5,16 +5,16 @@ import spock.lang.Unroll
 
 class UserHandlerTest extends Specification {
 
-    def "Accepted content types may include patterns such as type/subType1+subType2"() {
+    def "Accepted content types must be of the form type/subType"() {
         expect:
         UserHandler.parseAcceptedContentTypes(acceptDirective) == expectedResults
 
         where:
         acceptDirective                        | expectedResults
         'application/json'                     | ['application/json']
-        'application/xml+json'                 | ['application/xml', 'application/json']
-        'text/html'                            | ['text/html']
-        'text/html+xml+plain,application/html' | ['text/html', 'text/xml', 'text/plain', 'application/html']
+        'application/xml, application/json'    | ['application/xml', 'application/json']
+        '  text/html '                         | ['text/html']
+        'model/x3d+binary,text/html,text/json' | ['model/x3d+binary', 'text/html', 'text/json']
     }
 
     @Unroll

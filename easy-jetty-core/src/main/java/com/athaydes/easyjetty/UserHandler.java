@@ -42,6 +42,9 @@ final class UserHandler extends AbstractHandler implements EasyJettyHandler {
     }
 
     protected static List<String> parseAcceptedContentTypes(String accepted) {
+        if (accepted.contains("*")) {
+            throw new RuntimeException("Invalid contentType (must not contain wildcard)");
+        }
         List<String> result = new ArrayList<>(2);
         String[] parts = accepted.split(",");
         for (String part : parts) {
@@ -52,10 +55,7 @@ final class UserHandler extends AbstractHandler implements EasyJettyHandler {
             if (subParts.length != 2) {
                 throw new RuntimeException("Invalid contentType (does not contain 'type/subtype'): " + accepted);
             }
-            String[] subTypes = subParts[1].split("\\+");
-            for (String subType : subTypes) {
-                result.add(subParts[0] + "/" + subType);
-            }
+            result.add(part.trim());
         }
         return result;
     }
@@ -72,7 +72,9 @@ final class UserHandler extends AbstractHandler implements EasyJettyHandler {
             return;
         }
 
-        if (defaultContentType != null) {
+        if (!ACCEPT_EVERYTHING.equals(acceptedContentType)) {
+            res.setHeader(HttpHeader.CONTENT_TYPE.asString(), acceptedContentType);
+        } else if (defaultContentType != null) {
             res.setContentType(defaultContentType);
         }
 
