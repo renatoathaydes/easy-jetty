@@ -1,13 +1,16 @@
-package com.athaydes.easyjetty.websocket;
+package com.athaydes.easyjetty.websocket.handler;
 
 import org.eclipse.jetty.websocket.api.Session;
 
 import java.io.IOException;
 
 /**
- *
+ * User provided connection starter.
+ * Can be implemented with a Java 8 lambda.
  */
-public interface ConnectionStarter {
+public interface ConnectionStartedHandler {
+
+    static final ConnectionStartedHandler NO_OP = new NoOp();
 
     public static class ConnectionExchange {
         public final Session session;
@@ -21,12 +24,18 @@ public interface ConnectionStarter {
         }
     }
 
-    static final class Default implements ConnectionStarter {
+    static final class NoOp implements ConnectionStartedHandler {
         @Override
         public void onConnect(ConnectionExchange exchange) {
         }
     }
 
+    /**
+     * Handle a WebSocket connection start.
+     *
+     * @param exchange the connection exchange
+     * @throws java.io.IOException if there's a problem in communication
+     */
     public void onConnect(ConnectionExchange exchange)
             throws IOException;
 

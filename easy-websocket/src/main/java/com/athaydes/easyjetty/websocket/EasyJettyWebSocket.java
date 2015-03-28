@@ -6,6 +6,7 @@ import com.athaydes.easyjetty.extension.EasyJettyExtension;
 import com.athaydes.easyjetty.extension.event.BeforeStartEvent;
 import com.athaydes.easyjetty.extension.event.BeforeStopEvent;
 import com.athaydes.easyjetty.extension.event.ExtensionAddedEvent;
+import com.athaydes.easyjetty.websocket.handler.*;
 import org.eclipse.jetty.servlet.ServletHolder;
 
 import java.util.ArrayList;
@@ -16,20 +17,7 @@ import java.util.List;
  */
 public class EasyJettyWebSocket implements EasyJettyExtension {
 
-    static class UserEndpoint {
-        final String path;
-        final ConnectionStarter connectionStarter;
-        final WebSocketMessageResponder responder;
-
-        public UserEndpoint(String path, ConnectionStarter connectionStarter, WebSocketMessageResponder responder) {
-            this.path = path;
-            this.connectionStarter = connectionStarter;
-            this.responder = responder;
-        }
-    }
-
     private final List<UserEndpoint> endpoints = new ArrayList<>();
-    private final ConnectionStarter noOpConnectionStarter = new ConnectionStarter.Default();
 
     @Override
     public void handleEvent(EasyJettyEvent event) {
@@ -71,13 +59,60 @@ public class EasyJettyWebSocket implements EasyJettyExtension {
         }
     }
 
-    public EasyJettyWebSocket on(String path, WebSocketMessageResponder responder) {
-        endpoints.add(new UserEndpoint(path, noOpConnectionStarter, responder));
+    public EasyJettyWebSocket onText(String path, TextMessageHandler responder) {
+        endpoints.add(new UserEndpoint(path, ConnectionStartedHandler.NO_OP, responder,
+                BinaryMessageHandler.NO_OP, WebSocketErrorHandler.NO_OP,
+                ConnectionClosedHandler.NO_OP));
         return this;
     }
 
-    public EasyJettyWebSocket on(String path, ConnectionStarter connectionStarter, WebSocketMessageResponder responder) {
-        endpoints.add(new UserEndpoint(path, connectionStarter, responder));
+    public EasyJettyWebSocket onBinary(String path, BinaryMessageHandler responder) {
+        endpoints.add(new UserEndpoint(path, ConnectionStartedHandler.NO_OP, TextMessageHandler.NO_OP,
+                responder, WebSocketErrorHandler.NO_OP, ConnectionClosedHandler.NO_OP));
+        return this;
+    }
+
+    public EasyJettyWebSocket onText(String path, ConnectionStartedHandler connectionStarter,
+                                     TextMessageHandler responder) {
+        endpoints.add(new UserEndpoint(path, connectionStarter, responder, BinaryMessageHandler.NO_OP,
+                WebSocketErrorHandler.NO_OP, ConnectionClosedHandler.NO_OP));
+        return this;
+    }
+
+    public EasyJettyWebSocket onBinary(String path, ConnectionStartedHandler connectionStarter,
+                                       BinaryMessageHandler responder) {
+        endpoints.add(new UserEndpoint(path, connectionStarter, TextMessageHandler.NO_OP, responder,
+                WebSocketErrorHandler.NO_OP, ConnectionClosedHandler.NO_OP));
+        return this;
+    }
+
+    public EasyJettyWebSocket onText(String path, ConnectionStartedHandler connectionStarter,
+                                     TextMessageHandler responder, WebSocketErrorHandler errorHandler) {
+        endpoints.add(new UserEndpoint(path, connectionStarter, responder, BinaryMessageHandler.NO_OP,
+                errorHandler, ConnectionClosedHandler.NO_OP));
+        return this;
+    }
+
+    public EasyJettyWebSocket onBinary(String path, ConnectionStartedHandler connectionStarter,
+                                       BinaryMessageHandler responder, WebSocketErrorHandler errorHandler) {
+        endpoints.add(new UserEndpoint(path, connectionStarter, TextMessageHandler.NO_OP, responder,
+                errorHandler, ConnectionClosedHandler.NO_OP));
+        return this;
+    }
+
+    public EasyJettyWebSocket onText(String path, ConnectionStartedHandler connectionStarter,
+                                     TextMessageHandler responder, WebSocketErrorHandler errorHandler,
+                                     ConnectionClosedHandler connectionCloser) {
+        endpoints.add(new UserEndpoint(path, connectionStarter, responder, BinaryMessageHandler.NO_OP,
+                errorHandler, connectionCloser));
+        return this;
+    }
+
+    public EasyJettyWebSocket onBinary(String path, ConnectionStartedHandler connectionStarter,
+                                       BinaryMessageHandler responder, WebSocketErrorHandler errorHandler,
+                                       ConnectionClosedHandler connectionCloser) {
+        endpoints.add(new UserEndpoint(path, connectionStarter, TextMessageHandler.NO_OP, responder,
+                errorHandler, connectionCloser));
         return this;
     }
 

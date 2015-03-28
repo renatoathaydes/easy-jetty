@@ -6,14 +6,11 @@ import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
 import org.eclipse.jetty.websocket.servlet.WebSocketServlet;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
-/**
- *
- */
-public class EasyJettyWebSocketServlet extends WebSocketServlet {
+class EasyJettyWebSocketServlet extends WebSocketServlet {
 
-    private final EasyJettyWebSocket.UserEndpoint userEndpoint;
+    private final UserEndpoint userEndpoint;
 
-    public EasyJettyWebSocketServlet(EasyJettyWebSocket.UserEndpoint userEndpoint) {
+    EasyJettyWebSocketServlet(UserEndpoint userEndpoint) {
         this.userEndpoint = userEndpoint;
     }
 
@@ -26,7 +23,6 @@ public class EasyJettyWebSocketServlet extends WebSocketServlet {
             }
         });
     }
-
 
 
 }
