@@ -1,5 +1,7 @@
 package com.athaydes.easyjetty.websocket.handler;
 
+import com.athaydes.easyjetty.EasyJetty;
+import com.athaydes.easyjetty.mapper.ObjectMapperGroup;
 import org.eclipse.jetty.websocket.api.Session;
 
 import java.io.IOException;
@@ -14,13 +16,16 @@ public interface ConnectionStartedHandler {
 
     public static class ConnectionExchange {
         public final Session session;
+        private final EasyJetty easyJetty;
 
-        public ConnectionExchange(Session session) {
+        public ConnectionExchange(EasyJetty easyJetty, Session session) {
+            this.easyJetty = easyJetty;
             this.session = session;
         }
 
         public void send(Object object) throws IOException {
-            session.getRemote().sendString(object.toString());
+            ObjectMapperGroup omGroup = easyJetty.getObjectMapperGroup();
+            session.getRemote().sendString(omGroup.map(object));
         }
     }
 

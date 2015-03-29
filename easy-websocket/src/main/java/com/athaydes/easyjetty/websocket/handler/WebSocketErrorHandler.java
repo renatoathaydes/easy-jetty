@@ -1,5 +1,6 @@
 package com.athaydes.easyjetty.websocket.handler;
 
+import com.athaydes.easyjetty.EasyJetty;
 import org.eclipse.jetty.websocket.api.Session;
 
 import java.io.IOException;
@@ -15,8 +16,8 @@ public interface WebSocketErrorHandler {
     public static class ErrorExchange extends ConnectionStartedHandler.ConnectionExchange {
         public final Throwable error;
 
-        public ErrorExchange(Session session, Throwable error) {
-            super(session);
+        public ErrorExchange(EasyJetty easyJetty, Session session, Throwable error) {
+            super(easyJetty, session);
             this.error = error;
         }
     }

@@ -4,7 +4,6 @@ import com.athaydes.easyjetty.EasyJetty;
 import com.athaydes.easyjetty.extension.EasyJettyEvent;
 import com.athaydes.easyjetty.extension.EasyJettyExtension;
 import com.athaydes.easyjetty.extension.event.BeforeStartEvent;
-import com.athaydes.easyjetty.extension.event.BeforeStopEvent;
 import com.athaydes.easyjetty.extension.event.ExtensionAddedEvent;
 import com.athaydes.easyjetty.websocket.handler.*;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -25,9 +24,6 @@ public class EasyJettyWebSocket implements EasyJettyExtension {
             handleAddedEvent((ExtensionAddedEvent) event);
         } else if (event instanceof BeforeStartEvent) {
             config(event.getEasyJetty());
-            start();
-        } else if (event instanceof BeforeStopEvent) {
-            stop();
         }
     }
 
@@ -37,24 +33,15 @@ public class EasyJettyWebSocket implements EasyJettyExtension {
             if (jetty.isRunning()) {
                 jetty.stop(false);
                 config(jetty);
-                start();
                 jetty.start();
             }
         }
     }
 
-    private void start() {
-
-    }
-
-    private void stop() {
-
-    }
-
     private void config(EasyJetty easyJetty) {
         for (UserEndpoint endpoint : endpoints) {
             easyJetty.getServletHandler().addServlet(
-                    new ServletHolder(new EasyJettyWebSocketServlet(endpoint)),
+                    new ServletHolder(new EasyJettyWebSocketServlet(easyJetty, endpoint)),
                     endpoint.path);
         }
     }

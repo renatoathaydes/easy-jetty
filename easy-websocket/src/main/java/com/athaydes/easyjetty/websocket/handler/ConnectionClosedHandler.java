@@ -1,5 +1,6 @@
 package com.athaydes.easyjetty.websocket.handler;
 
+import com.athaydes.easyjetty.EasyJetty;
 import org.eclipse.jetty.websocket.api.Session;
 
 /**
@@ -15,8 +16,8 @@ public interface ConnectionClosedHandler {
         public final String reason;
         public final int statusCode;
 
-        public CloseExchange(Session session, int statusCode, String reason) {
-            super(session);
+        public CloseExchange(EasyJetty easyJetty, Session session, int statusCode, String reason) {
+            super(easyJetty, session);
             this.reason = reason;
             this.statusCode = statusCode;
         }

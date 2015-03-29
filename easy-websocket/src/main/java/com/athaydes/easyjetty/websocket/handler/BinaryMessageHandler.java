@@ -1,5 +1,6 @@
 package com.athaydes.easyjetty.websocket.handler;
 
+import com.athaydes.easyjetty.EasyJetty;
 import org.eclipse.jetty.websocket.api.Session;
 
 import java.io.IOException;
@@ -29,8 +30,8 @@ public interface BinaryMessageHandler {
          */
         public final int len;
 
-        public BinaryMessageExchange(Session session, byte[] payload, int offset, int len) {
-            super(session);
+        public BinaryMessageExchange(EasyJetty easyJetty, Session session, byte[] payload, int offset, int len) {
+            super(easyJetty, session);
             this.payload = payload;
             this.offset = offset;
             this.len = len;

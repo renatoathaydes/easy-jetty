@@ -1,10 +1,11 @@
 package com.athaydes.easyjetty.websocket;
 
+import com.athaydes.easyjetty.EasyJetty;
 import com.athaydes.easyjetty.websocket.handler.BinaryMessageHandler.BinaryMessageExchange;
 import com.athaydes.easyjetty.websocket.handler.ConnectionClosedHandler.CloseExchange;
 import com.athaydes.easyjetty.websocket.handler.ConnectionStartedHandler.ConnectionExchange;
-import com.athaydes.easyjetty.websocket.handler.WebSocketErrorHandler.ErrorExchange;
 import com.athaydes.easyjetty.websocket.handler.TextMessageHandler.MessageExchange;
+import com.athaydes.easyjetty.websocket.handler.WebSocketErrorHandler.ErrorExchange;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketListener;
 
@@ -12,10 +13,12 @@ import java.io.IOException;
 
 class EasyJettyWebSocketListener implements WebSocketListener {
 
+    private final EasyJetty easyJetty;
     private final UserEndpoint userEndpoint;
     private volatile Session session;
 
-    public EasyJettyWebSocketListener(UserEndpoint userEndpoint) {
+    public EasyJettyWebSocketListener(EasyJetty easyJetty, UserEndpoint userEndpoint) {
+        this.easyJetty = easyJetty;
         this.userEndpoint = userEndpoint;
     }
 
@@ -25,7 +28,7 @@ class EasyJettyWebSocketListener implements WebSocketListener {
         try {
             if (currentSession != null) {
                 userEndpoint.binaryResponder.handleBinaryMessage(
-                        new BinaryMessageExchange(session, payload, offset, len));
+                        new BinaryMessageExchange(easyJetty, session, payload, offset, len));
             }
         } catch (IOException e) {
             onWebSocketError(e);
@@ -34,7 +37,7 @@ class EasyJettyWebSocketListener implements WebSocketListener {
 
     @Override
     public void onWebSocketClose(int statusCode, String reason) {
-        userEndpoint.connectionCloser.onClose(new CloseExchange(session, statusCode, reason));
+        userEndpoint.connectionCloser.onClose(new CloseExchange(easyJetty, session, statusCode, reason));
         this.session = null;
     }
 
@@ -42,7 +45,7 @@ class EasyJettyWebSocketListener implements WebSocketListener {
     public void onWebSocketConnect(Session session) {
         this.session = session;
         try {
-            userEndpoint.connectionStarter.onConnect(new ConnectionExchange(session));
+            userEndpoint.connectionStarter.onConnect(new ConnectionExchange(easyJetty, session));
         } catch (IOException e) {
             onWebSocketError(e);
         }
@@ -51,7 +54,7 @@ class EasyJettyWebSocketListener implements WebSocketListener {
     @Override
     public void onWebSocketError(Throwable cause) {
         try {
-            userEndpoint.errorHandler.onError(new ErrorExchange(session, cause));
+            userEndpoint.errorHandler.onError(new ErrorExchange(easyJetty, session, cause));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -62,7 +65,7 @@ class EasyJettyWebSocketListener implements WebSocketListener {
         final Session currentSession = session;
         try {
             if (currentSession != null) {
-                userEndpoint.responder.respond(new MessageExchange(currentSession, message));
+                userEndpoint.responder.respond(new MessageExchange(easyJetty, currentSession, message));
             }
         } catch (IOException e) {
             onWebSocketError(e);

@@ -1,5 +1,6 @@
 package com.athaydes.easyjetty.websocket.handler;
 
+import com.athaydes.easyjetty.EasyJetty;
 import org.eclipse.jetty.websocket.api.Session;
 
 import java.io.IOException;
@@ -15,8 +16,8 @@ public interface TextMessageHandler {
     public static class MessageExchange extends ConnectionStartedHandler.ConnectionExchange {
         public final String message;
 
-        public MessageExchange(Session session, String message) {
-            super(session);
+        public MessageExchange(EasyJetty easyJetty, Session session, String message) {
+            super(easyJetty, session);
             this.message = message;
         }
     }
