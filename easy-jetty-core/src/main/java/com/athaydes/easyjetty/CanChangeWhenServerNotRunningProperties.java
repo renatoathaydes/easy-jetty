@@ -13,6 +13,7 @@ class CanChangeWhenServerNotRunningProperties {
     private boolean allowDirectoryListing;
     private RequestLog requestLog;
     private String resourcesLocation;
+    private String[] virtualHosts;
 
     private static void errorIfServerStarted(Server server) {
         if (server != null && server.isStarted()) {
@@ -65,4 +66,12 @@ class CanChangeWhenServerNotRunningProperties {
         this.resourcesLocation = resourcesLocation;
     }
 
+    public String[] getVirtualHosts() {
+        return virtualHosts;
+    }
+
+    public void setVirtualHosts(Server server, String... virtualHosts) {
+        errorIfServerStarted(server);
+        this.virtualHosts = virtualHosts;
+    }
 }
