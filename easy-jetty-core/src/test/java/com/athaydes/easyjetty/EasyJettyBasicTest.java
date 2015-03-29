@@ -5,7 +5,9 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class EasyJettyBasicTest extends EasyJettyTest {
 
@@ -56,6 +58,16 @@ public class EasyJettyBasicTest extends EasyJettyTest {
         easy.resourcesLocation("src/").disableDirectoryListing().start();
         ContentResponse response = sendReqAndWait("GET", "http://localhost:8080/");
         assertEquals(HttpStatus.FORBIDDEN_403, response.getStatus());
+    }
+
+    @Test
+    public void virtualHostsCanBeSet() throws Exception {
+        easy.withVirtualHosts("127.0.0.1")
+                .resourcesLocation("src/").start();
+        ContentResponse response = sendReqAndWait("GET", "http://127.0.0.1:8080/");
+        assertEquals(HttpStatus.OK_200, response.getStatus());
+        ContentResponse response2 = sendReqAndWait("GET", "http://localhost:8080/");
+        assertEquals(HttpStatus.NOT_FOUND_404, response2.getStatus());
     }
 
 }

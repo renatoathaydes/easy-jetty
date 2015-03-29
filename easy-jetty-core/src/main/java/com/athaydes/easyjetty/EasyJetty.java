@@ -49,6 +49,7 @@ public class EasyJetty {
         notRunningProperties.setAllowDirectoryListing(true, server);
         notRunningProperties.setRequestLog(null, server);
         notRunningProperties.setResourcesLocation(null, server);
+        notRunningProperties.setVirtualHosts(server);
         defaultContentType = null;
     }
 
@@ -77,6 +78,16 @@ public class EasyJetty {
      */
     public EasyJetty contextPath(String path) {
         notRunningProperties.setContextPath(sanitize(path), server);
+        return this;
+    }
+
+    /**
+     * Set the virtual hosts for this Server.
+     * @param virtualHosts virtual host names
+     * @return this
+     */
+    public EasyJetty withVirtualHosts(String... virtualHosts) {
+        notRunningProperties.setVirtualHosts(server, virtualHosts);
         return this;
     }
 
@@ -299,6 +310,9 @@ public class EasyJetty {
     private void initializeServer() {
         servletHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
         servletHandler.setContextPath(notRunningProperties.getContextPath());
+        if (notRunningProperties.getVirtualHosts().length > 0) {
+            servletHandler.setVirtualHosts(notRunningProperties.getVirtualHosts());
+        }
         String resourcesLocation = notRunningProperties.getResourcesLocation();
         if (resourcesLocation != null) {
             servletHandler.setResourceBase(resourcesLocation);
