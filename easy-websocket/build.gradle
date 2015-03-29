@@ -1,0 +1,10 @@
+apply plugin: 'java'
+
+dependencies {
+    compile project(':easy-jetty-core')
+    compile group: 'org.eclipse.jetty.websocket', name: 'javax-websocket-server-impl', version: jettyVersion
+
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    testCompile group: 'org.eclipse.jetty.websocket', name: 'websocket-client', version: jettyVersion
+    testCompile group: 'com.google.code.tempus-fugit', name: 'tempus-fugit', version: '1.1'
+}

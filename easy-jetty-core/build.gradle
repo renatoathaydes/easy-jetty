@@ -1,0 +1,43 @@
+apply plugin: 'groovy'
+apply plugin: 'idea'
+
+dependencies {
+    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
+    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: jettyVersion
+
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    testCompile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.3.9'
+    testCompile group: 'org.spockframework', name: 'spock-core', version: '0.7-groovy-2.0'
+    testCompile group: 'org.eclipse.jetty', name: 'jetty-client', version: jettyVersion
+    testCompile group: 'io.fastjson', name: 'boon', version: '0.32'
+}
+
+/* Publishing config */
+
+publishing {
+    publications {
+        mavenJava( MavenPublication ) {
+            from components.java
+            artifact sourcesJar
+        }
+    }
+}
+
+bintray {
+    user = project.hasProperty( "bintrayUserName" ) ? bintrayUserName : null
+    key = project.hasProperty( "bintrayApiKey" ) ? bintrayApiKey : null
+    publications = [ "mavenJava" ]
+    publish = true
+    pkg {
+        repo = 'maven'
+        name = 'easy-jetty'
+        licenses = [ 'Apache-2.0' ]
+        desc = 'Makes it really easy to embed a Jetty Web Server'
+        websiteUrl = 'https://github.com/renatoathaydes/easy-jetty'
+        issueTrackerUrl = 'https://github.com/renatoathaydes/easy-jetty/issues'
+        labels = [ 'http', 'webserver', 'jetty', 'java' ]
+        publicDownloadNumbers = true
+    }
+}
+
+bintrayUpload.dependsOn build, sourcesJar
