@@ -38,12 +38,14 @@ public class EasyJetty {
     private volatile String defaultContentType;
     private volatile Server server;
     private volatile ServletContextHandler servletHandler;
+    private volatile boolean sslOnly;
 
     public EasyJetty() {
         restoreDefaults();
     }
 
     private void restoreDefaults() {
+        sslOnly = false;
         notRunningProperties.setPort(8080, server);
         notRunningProperties.setContextPath("/", server);
         notRunningProperties.setAllowDirectoryListing(true, server);
@@ -83,6 +85,7 @@ public class EasyJetty {
 
     /**
      * Set the virtual hosts for this Server.
+     *
      * @param virtualHosts virtual host names
      * @return this
      */
@@ -187,6 +190,16 @@ public class EasyJetty {
     public EasyJetty withMapperGroup(ObjectMapperGroup mapperGroup) {
         objectSender.setMapperGroup(mapperGroup);
         return this;
+    }
+
+    public EasyJetty ssl(SSLConfig config) {
+        notRunningProperties.setSsl(config, server);
+        return this;
+    }
+
+    public EasyJetty sslOnly(SSLConfig config) {
+        sslOnly = true;
+        return ssl(config);
     }
 
     public ObjectMapperGroup getObjectMapperGroup() {
@@ -339,6 +352,14 @@ public class EasyJetty {
 
         server = new Server(notRunningProperties.getPort());
         server.setHandler(allHandler);
+
+        SSLConfig sslConfig = notRunningProperties.getSSLConfig();
+        if (sslConfig != null) {
+            while (sslOnly && server.getConnectors().length == 1) {
+                server.removeConnector(server.getConnectors()[0]);
+            }
+            server.addConnector(sslConfig.createSslConnector(server));
+        }
     }
 
 }

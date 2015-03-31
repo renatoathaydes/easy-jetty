@@ -14,6 +14,7 @@ class CanChangeWhenServerNotRunningProperties {
     private RequestLog requestLog;
     private String resourcesLocation;
     private String[] virtualHosts;
+    private SSLConfig sslConfig;
 
     private static void errorIfServerStarted(Server server) {
         if (server != null && server.isStarted()) {
@@ -74,4 +75,14 @@ class CanChangeWhenServerNotRunningProperties {
         errorIfServerStarted(server);
         this.virtualHosts = virtualHosts;
     }
+
+    public SSLConfig getSSLConfig() {
+        return sslConfig;
+    }
+
+    public void setSsl(SSLConfig sslConfig, Server server) {
+        errorIfServerStarted(server);
+        this.sslConfig = sslConfig;
+    }
+
 }

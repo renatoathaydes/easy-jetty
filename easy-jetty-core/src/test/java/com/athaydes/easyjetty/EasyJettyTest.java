@@ -3,6 +3,7 @@ package com.athaydes.easyjetty;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.After;
 import org.junit.Before;
 
@@ -12,7 +13,15 @@ import java.util.Map;
 public abstract class EasyJettyTest {
 
     final EasyJetty easy = new EasyJetty();
-    final HttpClient client = new HttpClient();
+    final HttpClient client;
+
+    public EasyJettyTest() {
+        SslContextFactory sslContextFactory = new SslContextFactory();
+        sslContextFactory.setKeyStorePath(EasyJettyBasicTest.CACERTS);
+        sslContextFactory.setKeyStorePassword(EasyJettyBasicTest.KEYPASS);
+        sslContextFactory.setKeyManagerPassword(EasyJettyBasicTest.MANAGER_PASS);
+        client = new HttpClient(sslContextFactory);
+    }
 
     @Before
     public void setup() throws Exception {

@@ -17,7 +17,7 @@ subprojects {
 
     sourceCompatibility = 1.7
     group = 'com.athaydes.easy-jetty'
-    version = '0.1'
+    version = '0.2'
 
     ext.jettyVersion = '9.2.10.v20150310'
 

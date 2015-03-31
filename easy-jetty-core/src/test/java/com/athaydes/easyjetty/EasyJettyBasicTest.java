@@ -8,6 +8,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class EasyJettyBasicTest extends EasyJettyTest {
 
@@ -16,7 +17,6 @@ public class EasyJettyBasicTest extends EasyJettyTest {
     public void serverStarts() {
         easy.start();
         assertTrue(easy.isRunning());
-        easy.stop();
     }
 
     @Test
@@ -68,6 +68,40 @@ public class EasyJettyBasicTest extends EasyJettyTest {
         assertEquals(HttpStatus.OK_200, response.getStatus());
         ContentResponse response2 = sendReqAndWait("GET", "http://localhost:8080/");
         assertEquals(HttpStatus.NOT_FOUND_404, response2.getStatus());
+    }
+
+    static final String CACERTS = "../ssl/renatokeystore";
+    static final String KEYPASS = "renatopass";
+    static final String MANAGER_PASS = "mypass";
+
+    @Test
+    public void sslConfigWorks() throws Exception {
+        easy.ssl(new SSLConfig(CACERTS, KEYPASS, MANAGER_PASS))
+                .resourcesLocation("src/")
+                .start();
+
+        ContentResponse response = sendReqAndWait("GET", "http://localhost:8080/");
+        ContentResponse sslResponse = sendReqAndWait("GET", "https://localhost:8443/");
+
+        assertEquals(HttpStatus.OK_200, response.getStatus());
+        assertEquals(HttpStatus.OK_200, sslResponse.getStatus());
+    }
+
+    @Test
+    public void sslOnlyConfigWorks() throws Exception {
+        easy.sslOnly(new SSLConfig(CACERTS, KEYPASS, MANAGER_PASS))
+                .resourcesLocation("src/")
+                .start();
+
+        ContentResponse sslResponse = sendReqAndWait("GET", "https://localhost:8443/");
+        assertEquals(HttpStatus.OK_200, sslResponse.getStatus());
+
+        try {
+            ContentResponse response = sendReqAndWait("GET", "http://localhost:8080/");
+            fail("Should have failed but returned " + response.getStatus());
+        } catch (Exception e) {
+            // ok
+        }
     }
 
 }

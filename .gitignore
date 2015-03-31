@@ -3,6 +3,8 @@ out/
 buid/
 .gradle/
 
+ssl/
+
 *.iml
 *.ipr
 *.iws
