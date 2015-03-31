@@ -70,9 +70,9 @@ public class EasyJettyBasicTest extends EasyJettyTest {
         assertEquals(HttpStatus.NOT_FOUND_404, response2.getStatus());
     }
 
-    static final String CACERTS = "../ssl/renatokeystore";
-    static final String KEYPASS = "renatopass";
-    static final String MANAGER_PASS = "mypass";
+    public static final String CACERTS = "../ssl/renatokeystore";
+    public static final String KEYPASS = "renatopass";
+    public static final String MANAGER_PASS = "mypass";
 
     @Test
     public void sslConfigWorks() throws Exception {
