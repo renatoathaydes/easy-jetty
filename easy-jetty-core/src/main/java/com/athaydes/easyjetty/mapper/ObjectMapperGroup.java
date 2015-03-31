@@ -16,6 +16,15 @@ public class ObjectMapperGroup {
     private volatile String nullString = "<null>";
 
     /**
+     * Creates a lenient ObjectMappperGroup.
+     *
+     * This is equivalent to calling <code>new ObjectMapperGroup(false, true)</code>.
+     */
+    public ObjectMapperGroup() {
+        this(false, true);
+    }
+
+    /**
      * Creates an ObjectMapperGroup.
      *
      * @param exactTypeOnly if true, only Objects whose exact Class has a corresponding Mapper will be mapped.
