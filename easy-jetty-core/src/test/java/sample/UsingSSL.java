@@ -20,7 +20,7 @@ public class UsingSSL {
     public static void main(String[] args) {
         new EasyJetty()
                 .sslOnly(new SSLConfig("ssl/renatokeystore", KEYPASS, MANAGER_PASS))
-                .resourcesLocation("src/")
+                .resourcesLocation("build/")
                 .on(MethodArbiter.Method.GET, "/", new Responder() {
                     @Override
                     public void respond(Exchange exchange) throws IOException {
