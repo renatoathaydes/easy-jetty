@@ -4,9 +4,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-class PathHelper {
+public class PathHelper {
 
-    static String sanitize(String path) {
+    public static String sanitize(String path) {
         if (!path.startsWith("/")) {
             path = "/" + path;
         }
@@ -22,11 +22,11 @@ class PathHelper {
         return new HandlerPath(paths);
     }
 
-    static boolean isParam(String path) {
+    public static boolean isParam(String path) {
         return path.startsWith(":");
     }
 
-    static Map<String, String> matchParams(Map<Integer, String> paramsByIndex, String requestPath) {
+    public static Map<String, String> matchParams(Map<Integer, String> paramsByIndex, String requestPath) {
         if (paramsByIndex.isEmpty()) {
             return Collections.emptyMap();
         }

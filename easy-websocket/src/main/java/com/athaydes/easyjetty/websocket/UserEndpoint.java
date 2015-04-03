@@ -1,5 +1,6 @@
 package com.athaydes.easyjetty.websocket;
 
+import com.athaydes.easyjetty.PathHelper;
 import com.athaydes.easyjetty.websocket.handler.*;
 
 class UserEndpoint {
@@ -17,7 +18,7 @@ class UserEndpoint {
                  BinaryMessageHandler binaryResponder,
                  WebSocketErrorHandler errorHandler,
                  ConnectionClosedHandler connectionCloser) {
-        this.path = path;
+        this.path = PathHelper.sanitize(path);
         this.connectionStarter = connectionStarter;
         this.responder = responder;
         this.binaryResponder = binaryResponder;

@@ -128,7 +128,7 @@ public class EasyJettyWebSocketTest {
                 return Object.class;
             }
         })).withExtension(new EasyJettyWebSocket()
-                .onText("/chat", new TextMessageHandler() {
+                .onText("chat", new TextMessageHandler() {
                     @Override
                     public void respond(MessageExchange exchange) throws IOException {
                         serverMessages.add(exchange.message);
