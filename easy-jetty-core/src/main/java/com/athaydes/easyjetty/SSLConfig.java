@@ -118,6 +118,10 @@ public final class SSLConfig {
         return this;
     }
 
+    public SslContextFactory getSslContextFactory() {
+        return sslContextFactory;
+    }
+
     ServerConnector createSslConnector(Server server) {
         ServerConnector sslConnector = new ServerConnector(server, sslContextFactory);
         sslConnector.setPort(port);
