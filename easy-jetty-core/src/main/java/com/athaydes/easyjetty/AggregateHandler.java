@@ -16,7 +16,12 @@ import static com.athaydes.easyjetty.PathHelper.handlerPath;
 
 class AggregateHandler extends AbstractHandlerContainer {
 
+    private final EasyJetty easyJetty;
     private final PathTree<EasyJettyHandler> handlers = new PathTree<>();
+
+    public AggregateHandler(EasyJetty easyJetty) {
+        this.easyJetty = easyJetty;
+    }
 
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
@@ -25,7 +30,13 @@ class AggregateHandler extends AbstractHandlerContainer {
         if (!availableHandlers.isEmpty()) {
             for (EasyJettyHandler handler : availableHandlers) {
                 if (handler.getMethodArbiter().accepts(baseRequest.getMethod())) {
-                    handler.handle(target, baseRequest, request, response);
+                    try {
+                        handler.handle(target, baseRequest, request, response);
+                    } catch (Exception e) {
+                        // necessary to set the context so that the ErrorPageErrorHandler can handle this request
+                        baseRequest.setContext(easyJetty.getServletContext());
+                        throw e;
+                    }
                     if (baseRequest.isHandled()) {
                         break;
                     }

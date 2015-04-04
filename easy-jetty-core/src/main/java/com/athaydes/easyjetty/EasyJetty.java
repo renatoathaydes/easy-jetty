@@ -7,10 +7,12 @@ import com.athaydes.easyjetty.http.MethodArbiter;
 import com.athaydes.easyjetty.mapper.ObjectMapperGroup;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
+import org.eclipse.jetty.servlet.ErrorPageErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 
 import javax.servlet.Servlet;
@@ -31,10 +33,11 @@ public class EasyJetty {
     private final CanChangeWhenServerNotRunningProperties notRunningProperties = new CanChangeWhenServerNotRunningProperties();
 
     private final Map<String, Class<? extends Servlet>> servlets = new HashMap<>(5);
-    private final AggregateHandler aggregateHandler = new AggregateHandler();
+    private final AggregateHandler aggregateHandler = new AggregateHandler(this);
     private final ObjectSender objectSender = new ObjectSender();
     private final List<EasyJettyExtension> extensions = new ArrayList<>(2);
 
+    private volatile ErrorPageErrorHandler errorHandler = null;
     private volatile String defaultContentType;
     private volatile Server server;
     private volatile ServletContextHandler servletHandler;
@@ -53,6 +56,7 @@ public class EasyJetty {
         notRunningProperties.setResourcesLocation(null, server);
         notRunningProperties.setVirtualHosts(server);
         defaultContentType = null;
+        errorHandler = null;
     }
 
     public EasyJetty withExtension(EasyJettyExtension extension) {
@@ -179,6 +183,25 @@ public class EasyJetty {
      */
     public EasyJetty requestLog(RequestLog requestLog) {
         notRunningProperties.setRequestLog(requestLog, server);
+        return this;
+    }
+
+    ErrorPageErrorHandler getErrorHandler(boolean createIfNull) {
+        synchronized (this) {
+            if (errorHandler == null && createIfNull) {
+                errorHandler = new ErrorPageErrorHandler();
+            }
+        }
+        return errorHandler;
+    }
+
+    public EasyJetty errorPage(int statusCode, String path) {
+        getErrorHandler(true).addErrorPage(statusCode, PathHelper.sanitize(path));
+        return this;
+    }
+
+    public EasyJetty errorPage(int lowestStatusCode, int highestStatusCode, String path) {
+        getErrorHandler(true).addErrorPage(lowestStatusCode, highestStatusCode, PathHelper.sanitize(path));
         return this;
     }
 
@@ -310,6 +333,10 @@ public class EasyJetty {
         return servletHandler;
     }
 
+    ContextHandler.Context getServletContext() {
+        return servletHandler.getServletContext();
+    }
+
     private void fireEvent(EasyJettyEvent event) {
         for (EasyJettyExtension extension : extensions) {
             try {
@@ -352,6 +379,11 @@ public class EasyJetty {
 
         server = new Server(notRunningProperties.getPort());
         server.setHandler(allHandler);
+
+        ErrorPageErrorHandler errorHandler = getErrorHandler(false);
+        if (errorHandler != null) {
+            server.addBean(errorHandler);
+        }
 
         SSLConfig sslConfig = notRunningProperties.getSSLConfig();
         if (sslConfig != null) {
