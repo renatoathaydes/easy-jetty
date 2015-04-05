@@ -14,6 +14,7 @@ import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ErrorPageErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 
 import javax.servlet.Servlet;
 import java.net.BindException;
@@ -32,7 +33,7 @@ public class EasyJetty {
 
     private final CanChangeWhenServerNotRunningProperties notRunningProperties = new CanChangeWhenServerNotRunningProperties();
 
-    private final Map<String, Class<? extends Servlet>> servlets = new HashMap<>(5);
+    private final Map<String, Object> servlets = new HashMap<>(5);
     private final AggregateHandler aggregateHandler = new AggregateHandler(this);
     private final ObjectSender objectSender = new ObjectSender();
     private final List<EasyJettyExtension> extensions = new ArrayList<>(2);
@@ -122,6 +123,18 @@ public class EasyJetty {
      * @return this
      */
     public EasyJetty servlet(String path, Class<? extends Servlet> servlet) {
+        servlets.put(sanitize(path), servlet);
+        return this;
+    }
+
+    /**
+     * Add a servlet.
+     *
+     * @param path    request path
+     * @param servlet the Servlet instance which will handle requests to this path
+     * @return this
+     */
+    public EasyJetty servlet(String path, Servlet servlet) {
         servlets.put(sanitize(path), servlet);
         return this;
     }
@@ -368,8 +381,13 @@ public class EasyJetty {
 
         servletHandler.addServlet(DefaultServlet.class, "/");
 
-        for (Map.Entry<String, Class<? extends Servlet>> entry : servlets.entrySet()) {
-            servletHandler.addServlet(entry.getValue(), entry.getKey());
+        for (Map.Entry<String, ?> entry : servlets.entrySet()) {
+            Object servlet = entry.getValue();
+            if (servlet instanceof Servlet) {
+                servletHandler.addServlet(new ServletHolder((Servlet) servlet), entry.getKey());
+            } else if (servlet instanceof Class) {
+                servletHandler.addServlet((Class) servlet, entry.getKey());
+            }
         }
 
         HandlerCollection allHandler = new HandlerCollection();
