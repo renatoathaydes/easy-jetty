@@ -12,7 +12,6 @@ import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
-import org.eclipse.jetty.servlet.ErrorPageErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
@@ -38,7 +37,8 @@ public class EasyJetty {
     private final ObjectSender objectSender = new ObjectSender();
     private final List<EasyJettyExtension> extensions = new ArrayList<>(2);
 
-    private volatile ErrorPageErrorHandler errorHandler = null;
+    private volatile HandlerCollection allHandler;
+    private volatile EasyJettyErrorHandler errorHandler;
     private volatile String defaultContentType;
     private volatile Server server;
     private volatile ServletContextHandler servletHandler;
@@ -56,6 +56,7 @@ public class EasyJetty {
         notRunningProperties.setRequestLog(null, server);
         notRunningProperties.setResourcesLocation(null, server);
         notRunningProperties.setVirtualHosts(server);
+        allHandler = new HandlerCollection();
         defaultContentType = null;
         errorHandler = null;
     }
@@ -199,10 +200,10 @@ public class EasyJetty {
         return this;
     }
 
-    ErrorPageErrorHandler getErrorHandler(boolean createIfNull) {
+    EasyJettyErrorHandler getErrorHandler(boolean createIfNull) {
         synchronized (this) {
             if (errorHandler == null && createIfNull) {
-                errorHandler = new ErrorPageErrorHandler();
+                errorHandler = new EasyJettyErrorHandler(this);
             }
         }
         return errorHandler;
@@ -346,6 +347,10 @@ public class EasyJetty {
         return servletHandler;
     }
 
+    HandlerCollection getAllHandler() {
+        return allHandler;
+    }
+
     ContextHandler.Context getServletContext() {
         return servletHandler.getServletContext();
     }
@@ -361,6 +366,32 @@ public class EasyJetty {
     }
 
     private void initializeServer() {
+        initializeServletHandler();
+        initializeRequestLogHandler();
+        configHandlers();
+
+        server = new Server(notRunningProperties.getPort());
+        server.setHandler(allHandler);
+
+        initializeErrorHandler();
+        initializeSSL();
+    }
+
+    private void configHandlers() {
+        allHandler.addHandler(aggregateHandler);
+        allHandler.addHandler(servletHandler);
+        allHandler.addHandler(new DefaultHandler());
+    }
+
+    private void initializeRequestLogHandler() {
+        RequestLogHandler requestLogHandler = new RequestLogHandler();
+        RequestLog requestLog = notRunningProperties.getRequestLog();
+        if (requestLog != null) {
+            requestLogHandler.setRequestLog(requestLog);
+        }
+    }
+
+    private void initializeServletHandler() {
         servletHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
         servletHandler.setContextPath(notRunningProperties.getContextPath());
         if (notRunningProperties.getVirtualHosts().length > 0) {
@@ -372,15 +403,11 @@ public class EasyJetty {
             servletHandler.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed",
                     Boolean.toString(notRunningProperties.isAllowDirectoryListing()));
         }
-
-        RequestLogHandler requestLogHandler = new RequestLogHandler();
-        RequestLog requestLog = notRunningProperties.getRequestLog();
-        if (requestLog != null) {
-            requestLogHandler.setRequestLog(requestLog);
-        }
-
         servletHandler.addServlet(DefaultServlet.class, "/");
+    }
 
+    @SuppressWarnings("unchecked")
+    private void initializeErrorHandler() {
         for (Map.Entry<String, ?> entry : servlets.entrySet()) {
             Object servlet = entry.getValue();
             if (servlet instanceof Servlet) {
@@ -389,20 +416,13 @@ public class EasyJetty {
                 servletHandler.addServlet((Class) servlet, entry.getKey());
             }
         }
-
-        HandlerCollection allHandler = new HandlerCollection();
-        allHandler.addHandler(aggregateHandler);
-        allHandler.addHandler(servletHandler);
-        allHandler.addHandler(new DefaultHandler());
-
-        server = new Server(notRunningProperties.getPort());
-        server.setHandler(allHandler);
-
-        ErrorPageErrorHandler errorHandler = getErrorHandler(false);
+        EasyJettyErrorHandler errorHandler = getErrorHandler(false);
         if (errorHandler != null) {
             server.addBean(errorHandler);
         }
+    }
 
+    private void initializeSSL() {
         SSLConfig sslConfig = notRunningProperties.getSSLConfig();
         if (sslConfig != null) {
             while (sslOnly && server.getConnectors().length == 1) {

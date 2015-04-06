@@ -33,7 +33,7 @@ class AggregateHandler extends AbstractHandlerContainer {
                     try {
                         handler.handle(target, baseRequest, request, response);
                     } catch (Exception e) {
-                        // necessary to set the context so that the ErrorPageErrorHandler can handle this request
+                        // necessary to set the context so that the ErrorHandler can handle this request
                         baseRequest.setContext(easyJetty.getServletContext());
                         throw e;
                     }
