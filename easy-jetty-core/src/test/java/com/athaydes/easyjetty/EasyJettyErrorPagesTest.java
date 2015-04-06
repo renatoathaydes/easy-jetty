@@ -10,9 +10,15 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.athaydes.easyjetty.http.MethodArbiter.Method.GET;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.isA;
+import static org.junit.Assert.*;
 
 public class EasyJettyErrorPagesTest extends EasyJettyTest {
 
@@ -147,6 +153,81 @@ public class EasyJettyErrorPagesTest extends EasyJettyTest {
         assertEquals("Servlet 404", response.getContentAsString());
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, response2.getStatus());
         assertEquals("Servlet 500", response2.getContentAsString());
+    }
+
+    @Test
+    public void handlerRequestAttributesAreSetOnError() throws Exception {
+        final AtomicReference<Map<String, Object>> requestAttributesRef = new AtomicReference<>();
+
+        easy.errorPage(500, 599, "error/page500")
+                .on(GET, "error/page500", new Responder() {
+                    @Override
+                    public void respond(Exchange exchange) throws IOException {
+                        requestAttributesRef.set(captureAttributesFrom(exchange.request));
+                        exchange.send("Page 500");
+                    }
+                })
+                .on(GET, "throw", new Responder() {
+                    @Override
+                    public void respond(Exchange exchange) throws IOException {
+                        throw new RuntimeException("the error");
+                    }
+                }).start();
+
+        ContentResponse response = sendReqAndWait("GET", "http://localhost:8080/throw");
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, response.getStatus());
+        assertEquals("Page 500", response.getContentAsString().trim());
+
+        Map<String, Object> attributes = requestAttributesRef.get();
+
+        assertNotNull(attributes);
+        assertThat((RuntimeException) attributes.get("javax.servlet.error.exception"), isA(RuntimeException.class));
+        assertEquals(attributes.get("javax.servlet.error.exception_type"), RuntimeException.class);
+        assertEquals(attributes.get("javax.servlet.error.message"), "the error");
+    }
+
+    @Test
+    public void servletRequestAttributesAreSetOnError() throws Exception {
+        final AtomicReference<Map<String, Object>> requestAttributesRef = new AtomicReference<>();
+        class Servlet500 extends HttpServlet {
+            @Override
+            protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+                requestAttributesRef.set(captureAttributesFrom(req));
+                resp.getOutputStream().print("Servlet 500");
+            }
+        }
+        class ServletWithError extends HttpServlet {
+            @Override
+            protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+                throw new RuntimeException("the error");
+            }
+        }
+        easy.errorPage(500, 599, "error/page500")
+                .servlet("throw", new ServletWithError())
+                .servlet("error/page500", new Servlet500()).start();
+
+        ContentResponse response = sendReqAndWait("GET", "http://localhost:8080/throw");
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, response.getStatus());
+        assertEquals("Servlet 500", response.getContentAsString());
+
+        Map<String, Object> attributes = requestAttributesRef.get();
+
+        assertNotNull(attributes);
+        assertThat((RuntimeException) attributes.get("javax.servlet.error.exception"), isA(RuntimeException.class));
+        assertEquals(attributes.get("javax.servlet.error.exception_type"), RuntimeException.class);
+        assertEquals(attributes.get("javax.servlet.error.message"), "java.lang.RuntimeException: the error");
+    }
+
+    private static Map<String, Object> captureAttributesFrom(HttpServletRequest req) {
+        Map<String, Object> result = new HashMap<>();
+        Enumeration<String> names = req.getAttributeNames();
+        while (names.hasMoreElements()) {
+            String name = names.nextElement();
+            result.put(name, req.getAttribute(name));
+        }
+        return Collections.unmodifiableMap(result);
     }
 
 }
