@@ -33,15 +33,30 @@ public interface Responder {
             this.acceptedContentType = acceptedContentType;
         }
 
+        /**
+         * Sends the given object as the response content.
+         *
+         * @param object to send back
+         * @throws java.lang.RuntimeException if no ObjectMapper can be found for the given object.
+         * @throws IOException                if a problem occurs while writing the data.
+         */
         public void send(Object object) throws IOException {
             sender.send(object, response);
         }
 
+        /**
+         * Receives the request content and map it to an instance of the given type.
+         *
+         * @param type to map the request content to.
+         * @param <T>  type
+         * @return instance of T, mapped from the request content
+         * @throws java.lang.IllegalArgumentException if the request's content length is too big.
+         * @throws java.lang.RuntimeException         if an IOException occurs while reading the request data
+         *                                            or no ObjectMapper can be found for the given type.
+         */
         public <T> T receiveAs(Class<T> type) {
             try {
                 return sender.receive(request, type);
-            } catch (RuntimeException rte) {
-                throw rte;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
