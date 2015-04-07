@@ -68,7 +68,7 @@ public abstract class EasyJettyTest {
     public static String randomPayloadOfSize(int size) {
         List<Character> chars = new ArrayList<>(Chars.unicodeChars());
         Collections.shuffle(chars);
-        StringBuffer buffer = new StringBuffer(size);
+        StringBuilder buffer = new StringBuilder(size);
         for (int i = 0; i < size; i++) {
             int index = i % chars.size();
             buffer.append(chars.get(index).charValue());
