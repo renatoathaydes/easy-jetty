@@ -3,6 +3,8 @@ package com.athaydes.easyjetty.mapper;
 /**
  * A mapper from user-defined Objects to Strings
  * (which will be sent in responses from the server).
+ *
+ * @see com.athaydes.easyjetty.mapper.ObjectSerializer
  */
 public interface ObjectMapper<T> {
 
@@ -13,6 +15,14 @@ public interface ObjectMapper<T> {
      * @return response body
      */
     String map(T object);
+
+    /**
+     * Turn the given String into an Object of type T.
+     *
+     * @param objectAsString to be transformed
+     * @return Object of type T
+     */
+    T unmap(String objectAsString);
 
     /**
      * @return top super-type of the mapped Objects.

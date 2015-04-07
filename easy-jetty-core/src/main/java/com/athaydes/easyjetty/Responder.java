@@ -20,16 +20,16 @@ public interface Responder {
         public final Request baseRequest;
         public final Map<String, String> params;
         public final String acceptedContentType;
-        private final ObjectSender sender;
+        private final ObjectSupport sender;
 
         Exchange(ServletOutputStream out, HttpServletRequest request, HttpServletResponse response,
-                 Request baseRequest, Map<String, String> parameters, ObjectSender objectSender, String acceptedContentType) {
+                 Request baseRequest, Map<String, String> parameters, ObjectSupport objectSupport, String acceptedContentType) {
             this.out = out;
             this.request = request;
             this.response = response;
             this.baseRequest = baseRequest;
             this.params = parameters;
-            this.sender = objectSender;
+            this.sender = objectSupport;
             this.acceptedContentType = acceptedContentType;
         }
 
@@ -37,6 +37,15 @@ public interface Responder {
             sender.send(object, response);
         }
 
+        public <T> T receiveAs(Class<T> type) {
+            try {
+                return sender.receive(request, type);
+            } catch (RuntimeException rte) {
+                throw rte;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     /**

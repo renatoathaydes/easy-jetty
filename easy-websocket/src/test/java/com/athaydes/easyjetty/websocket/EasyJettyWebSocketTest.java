@@ -2,8 +2,8 @@ package com.athaydes.easyjetty.websocket;
 
 import com.athaydes.easyjetty.EasyJetty;
 import com.athaydes.easyjetty.SSLConfig;
-import com.athaydes.easyjetty.mapper.ObjectMapper;
 import com.athaydes.easyjetty.mapper.ObjectMapperGroup;
+import com.athaydes.easyjetty.mapper.ObjectSerializer;
 import com.athaydes.easyjetty.websocket.handler.ConnectionClosedHandler;
 import com.athaydes.easyjetty.websocket.handler.ConnectionStartedHandler;
 import com.athaydes.easyjetty.websocket.handler.TextMessageHandler;
@@ -124,7 +124,7 @@ public class EasyJettyWebSocketTest {
         final List<String> serverMessages = new ArrayList<>();
         final AtomicBoolean done = new AtomicBoolean(false);
 
-        jetty.withMapperGroup(new ObjectMapperGroup().withMappers(new ObjectMapper() {
+        jetty.withMapperGroup(new ObjectMapperGroup().withMappers(new ObjectSerializer() {
             @Override
             public String map(Object object) {
                 return object.getClass().getSimpleName() + ":" + object.toString();

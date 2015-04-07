@@ -22,7 +22,7 @@ final class UserHandler extends AbstractHandler implements EasyJettyHandler {
     private final Responder responder;
     private final Map<Integer, String> paramsByIndex;
     private final String defaultContentType;
-    private final ObjectSender objectSender;
+    private final ObjectSupport objectSupport;
     private final List<String> acceptedContentTypes;
     private final boolean acceptEverything;
 
@@ -31,14 +31,14 @@ final class UserHandler extends AbstractHandler implements EasyJettyHandler {
                        Responder responder,
                        Map<Integer, String> paramsByIndex,
                        String defaultContentType,
-                       ObjectSender objectSender) {
+                       ObjectSupport objectSupport) {
         this.methodArbiter = methodArbiter;
         this.acceptEverything = acceptedContentType.equals(ACCEPT_EVERYTHING);
         this.responder = responder;
         this.acceptedContentTypes = acceptEverything ? null : parseAcceptedContentTypes(acceptedContentType);
         this.paramsByIndex = paramsByIndex;
         this.defaultContentType = defaultContentType;
-        this.objectSender = objectSender;
+        this.objectSupport = objectSupport;
     }
 
     protected static List<String> parseAcceptedContentTypes(String accepted) {
@@ -81,7 +81,7 @@ final class UserHandler extends AbstractHandler implements EasyJettyHandler {
         res.setStatus(HttpServletResponse.SC_OK);
         baseReq.setHandled(true);
         Map<String, String> params = PathHelper.matchParams(paramsByIndex, baseReq.getPathInfo());
-        responder.respond(new Responder.Exchange(res.getOutputStream(), req, res, baseReq, params, objectSender, acceptedContentType));
+        responder.respond(new Responder.Exchange(res.getOutputStream(), req, res, baseReq, params, objectSupport, acceptedContentType));
     }
 
     @Override

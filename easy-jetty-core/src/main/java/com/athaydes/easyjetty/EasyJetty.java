@@ -34,7 +34,7 @@ public class EasyJetty {
 
     private final Map<String, Object> servlets = new HashMap<>(5);
     private final AggregateHandler aggregateHandler = new AggregateHandler(this);
-    private final ObjectSender objectSender = new ObjectSender();
+    private final ObjectSupport objectSupport = new ObjectSupport(this);
     private final List<EasyJettyExtension> extensions = new ArrayList<>(2);
 
     private volatile HandlerCollection allHandler;
@@ -43,6 +43,7 @@ public class EasyJetty {
     private volatile Server server;
     private volatile ServletContextHandler servletHandler;
     private volatile boolean sslOnly;
+    private volatile int maxFormSize;
 
     public EasyJetty() {
         restoreDefaults();
@@ -59,6 +60,7 @@ public class EasyJetty {
         allHandler = new HandlerCollection();
         defaultContentType = null;
         errorHandler = null;
+        maxFormSize = -1;
     }
 
     public EasyJetty withExtension(EasyJettyExtension extension) {
@@ -157,7 +159,7 @@ public class EasyJetty {
                 responder,
                 handlerPath.getParametersByIndex(),
                 defaultContentType,
-                objectSender));
+                objectSupport));
         return this;
     }
 
@@ -225,7 +227,7 @@ public class EasyJetty {
     }
 
     public EasyJetty withMapperGroup(ObjectMapperGroup mapperGroup) {
-        objectSender.setMapperGroup(mapperGroup);
+        objectSupport.setMapperGroup(mapperGroup);
         return this;
     }
 
@@ -239,8 +241,20 @@ public class EasyJetty {
         return ssl(config);
     }
 
+    public EasyJetty maxFormSize(int maxBytes) {
+        if (maxBytes < 0) {
+            throw new IllegalArgumentException("MaxBytes must  be 0 or larger");
+        }
+        this.maxFormSize = maxBytes;
+        return this;
+    }
+
     public ObjectMapperGroup getObjectMapperGroup() {
-        return objectSender.getObjectMapperGroup();
+        return objectSupport.getObjectMapperGroup();
+    }
+
+    int getMaxFormSize() {
+        return maxFormSize < 0 ? Integer.MAX_VALUE : maxFormSize;
     }
 
     public boolean isRunning() {
@@ -311,7 +325,7 @@ public class EasyJetty {
                 if (clearConfig) {
                     servlets.clear();
                     aggregateHandler.clear();
-                    objectSender.clear();
+                    objectSupport.clear();
                     restoreDefaults();
                 }
             } catch (Exception e) {
@@ -375,6 +389,7 @@ public class EasyJetty {
 
         initializeErrorHandler();
         initializeSSL();
+        initializeServerAttributes();
     }
 
     private void configHandlers() {
@@ -432,4 +447,11 @@ public class EasyJetty {
         }
     }
 
+    private void initializeServerAttributes() {
+        if (maxFormSize >= 0) {
+            System.setProperty("org.eclipse.jetty.server.Request.maxFormContentSize", Integer.toString(maxFormSize));
+            getServletHandler().setMaxFormContentSize(maxFormSize);
+            server.setAttribute("org.eclipse.jetty.server.Request.maxFormContentSize", maxFormSize);
+        }
+    }
 }

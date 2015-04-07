@@ -1,5 +1,8 @@
 package com.athaydes.easyjetty.mapper;
 
+import javax.servlet.http.HttpServletRequest;
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -10,14 +13,33 @@ import java.util.Objects;
  */
 public class ObjectMapperGroup {
 
+    static final String PAYLOAD_TOO_BIG = "Request payload is too big";
+
+    private static final ObjectMapper<String> stringMapper = new ObjectMapper<String>() {
+        @Override
+        public String map(String object) {
+            return object.toString();
+        }
+
+        @Override
+        public String unmap(String objectAsString) {
+            return objectAsString;
+        }
+
+        @Override
+        public Class<? extends String> getMappedType() {
+            return String.class;
+        }
+    };
     private final Map<Class<?>, ObjectMapper<?>> mapperByType = new HashMap<>();
     private final boolean exactTypeOnly;
     private volatile boolean lenient = true;
+
     private volatile String nullString = "<null>";
 
     /**
      * Creates a lenient ObjectMappperGroup.
-     *
+     * <p/>
      * This is equivalent to calling <code>new ObjectMapperGroup(false, true)</code>.
      */
     public ObjectMapperGroup() {
@@ -63,8 +85,8 @@ public class ObjectMapperGroup {
      * Maps the given Object to a String using the appropriate ObjectMapper.
      * Errors are handled according to the "lenient" and "exactTypeOnly" parameters.
      *
-     * @param object
-     * @return
+     * @param object to map
+     * @return object as String
      */
     public String map(Object object) {
         if (object == null) {
@@ -74,11 +96,44 @@ public class ObjectMapperGroup {
         ObjectMapper mapper = findMapper(object);
         if (mapper == null) {
             if (lenient) {
-                return object.toString();
+                return stringMapper.map(object.toString());
             }
             throw new RuntimeException("Cannot map Object of type '" + object.getClass() + "' to a String");
         }
         return mapper.map(object);
+    }
+
+    public <T> T unmap(HttpServletRequest request, Class<T> type, int maxContentLength) {
+        ObjectMapper<?> mapper = mapperByType.get(type);
+        if (lenient && mapper == null && type.equals(String.class)) {
+            mapper = stringMapper;
+        } else if (mapper == null) {
+            throw new RuntimeException("No mapper found for type " + type.getName());
+        }
+        if (request.getContentLength() > maxContentLength) {
+            throw new IllegalArgumentException(PAYLOAD_TOO_BIG);
+        }
+        try {
+            StringBuilder sb = readFrom(request.getReader(), maxContentLength);
+            return type.cast(mapper.unmap(sb.toString()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private StringBuilder readFrom(BufferedReader reader, int maxContentLength) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        char[] charBuffer = new char[128];
+        int totalBytes = 0;
+        int bytesRead;
+        while ((bytesRead = reader.read(charBuffer)) > 0) {
+            totalBytes += bytesRead;
+            if (totalBytes > maxContentLength) {
+                throw new IllegalArgumentException(PAYLOAD_TOO_BIG);
+            }
+            sb.append(charBuffer, 0, bytesRead);
+        }
+        return sb;
     }
 
     private ObjectMapper findMapper(Object object) {

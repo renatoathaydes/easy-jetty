@@ -1,14 +1,20 @@
 package com.athaydes.easyjetty;
 
+
+import groovy.servlet.AbstractHttpServlet;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Test;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Collections;
+
+import static com.athaydes.easyjetty.http.MethodArbiter.Method.POST;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class EasyJettyBasicTest extends EasyJettyTest {
 
@@ -102,6 +108,44 @@ public class EasyJettyBasicTest extends EasyJettyTest {
         } catch (Exception e) {
             // ok
         }
+    }
+
+    @Test
+    public void maxBytesAcceptedWorksInServlets() throws Exception {
+        class MyServlet extends AbstractHttpServlet {
+            @Override
+            protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+                req.getParameterMap(); // building the map will attempt to consume the payload
+            }
+        }
+
+        easy.maxFormSize(10).servlet("/data", new MyServlet()).start();
+
+        ContentResponse response = sendReqAndWait("POST", "http://localhost:8080/data",
+                Collections.<String, String>emptyMap(), randomPayloadOfSize(10));
+        assertEquals(HttpStatus.OK_200, response.getStatus());
+
+        ContentResponse response2 = sendReqAndWait("POST", "http://localhost:8080/data",
+                Collections.<String, String>emptyMap(), randomPayloadOfSize(11));
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, response2.getStatus());
+    }
+
+    @Test
+    public void maxBytesAcceptedWorksInHandlers() throws Exception {
+        easy.maxFormSize(10).on(POST, "data", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                System.out.println(exchange.receiveAs(String.class));
+            }
+        }).start();
+
+        ContentResponse response = sendReqAndWait("POST", "http://localhost:8080/data",
+                Collections.<String, String>emptyMap(), randomPayloadOfSize(10));
+        assertEquals(HttpStatus.OK_200, response.getStatus());
+
+        ContentResponse response2 = sendReqAndWait("POST", "http://localhost:8080/data",
+                Collections.<String, String>emptyMap(), randomPayloadOfSize(11));
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, response2.getStatus());
     }
 
 }

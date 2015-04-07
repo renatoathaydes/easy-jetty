@@ -2,8 +2,8 @@ package sample;
 
 import com.athaydes.easyjetty.EasyJetty;
 import com.athaydes.easyjetty.Responder;
-import com.athaydes.easyjetty.mapper.ObjectMapper;
 import com.athaydes.easyjetty.mapper.ObjectMapperGroup;
+import com.athaydes.easyjetty.mapper.ObjectSerializer;
 import org.boon.json.JsonSerializer;
 import org.boon.json.JsonSerializerFactory;
 
@@ -32,7 +32,7 @@ public class HandlersWithObjectMappers {
 
     static int idCount = db.size();
 
-    static class BoonMapper implements ObjectMapper<Object> {
+    static class BoonMapper extends ObjectSerializer<Object> {
 
         private final JsonSerializer serializer = new JsonSerializerFactory().create();
 

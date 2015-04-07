@@ -3,11 +3,16 @@ package com.athaydes.easyjetty;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.util.StringContentProvider;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.MimeTypes;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.After;
 import org.junit.Before;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public abstract class EasyJettyTest {
@@ -43,11 +48,45 @@ public abstract class EasyJettyTest {
     }
 
     public ContentResponse sendReqAndWait(String method, String url, Map<String, String> headers) throws Exception {
+        return sendReqAndWait(method, url, headers, null);
+    }
+
+    public ContentResponse sendReqAndWait(String method, String url, Map<String, String> headers,
+                                          String payload) throws Exception {
         Request request = client.newRequest(url).method(method);
+        if (payload != null) {
+            // this needs to be set for Jetty's Servlet to even check the payload size!
+            request.header(HttpHeader.CONTENT_TYPE, MimeTypes.Type.FORM_ENCODED.asString());
+            request.content(new StringContentProvider(payload));
+        }
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             request.header(entry.getKey(), entry.getValue());
         }
         return request.send();
+    }
+
+    public static String randomPayloadOfSize(int size) {
+        List<Character> chars = new ArrayList<>(Chars.unicodeChars());
+        Collections.shuffle(chars);
+        StringBuffer buffer = new StringBuffer(size);
+        for (int i = 0; i < size; i++) {
+            int index = i % chars.size();
+            buffer.append(chars.get(index).charValue());
+        }
+        return buffer.toString();
+    }
+
+    static class Chars {
+
+        static List<Character> unicodeChars() {
+            char minChar = 32;
+            char maxChar = 126;
+            List<Character> result = new ArrayList<>(1 + maxChar - minChar);
+            for (char c = minChar; c <= maxChar; c++) {
+                result.add(c);
+            }
+            return result;
+        }
     }
 
 }

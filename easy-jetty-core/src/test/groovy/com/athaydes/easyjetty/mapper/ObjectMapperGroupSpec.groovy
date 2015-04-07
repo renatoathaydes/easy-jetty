@@ -1,7 +1,5 @@
-package com.athaydes.easyjetty
+package com.athaydes.easyjetty.mapper
 
-import com.athaydes.easyjetty.mapper.ObjectMapper
-import com.athaydes.easyjetty.mapper.ObjectMapperGroup
 import groovy.transform.TupleConstructor
 import spock.lang.Specification
 
@@ -111,7 +109,7 @@ class DomesticCat extends Cat {
     String name
 }
 
-class StringObjectMapper implements ObjectMapper<String> {
+class StringObjectMapper extends ObjectSerializer<String> {
     @Override
     String map(String object) {
         'String:' + object
@@ -121,7 +119,7 @@ class StringObjectMapper implements ObjectMapper<String> {
     Class<? extends String> getMappedType() { String }
 }
 
-class PersonObjectMapper implements ObjectMapper<Person> {
+class PersonObjectMapper extends ObjectSerializer<Person> {
     @Override
     String map(Person object) {
         object.name + '->' + object.age
@@ -131,7 +129,7 @@ class PersonObjectMapper implements ObjectMapper<Person> {
     Class<? extends Person> getMappedType() { Person }
 }
 
-class AnimalObjectMapper implements ObjectMapper<Animal> {
+class AnimalObjectMapper extends ObjectSerializer<Animal> {
     @Override
     String map(Animal object) {
         "Animal --- ${object.race}"

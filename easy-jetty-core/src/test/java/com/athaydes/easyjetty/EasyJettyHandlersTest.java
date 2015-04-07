@@ -1,8 +1,8 @@
 package com.athaydes.easyjetty;
 
 import com.athaydes.easyjetty.http.MethodArbiter.Method;
-import com.athaydes.easyjetty.mapper.ObjectMapper;
 import com.athaydes.easyjetty.mapper.ObjectMapperGroup;
+import com.athaydes.easyjetty.mapper.ObjectSerializer;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Test;
@@ -329,7 +329,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
 
     @Test
     public void objectMappingTest() throws Exception {
-        class BoolMapper implements ObjectMapper<Boolean> {
+        class BoolMapper extends ObjectSerializer<Boolean> {
             @Override
             public String map(Boolean object) {
                 return "Bool: " + object;
@@ -345,7 +345,7 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
             String name;
         }
 
-        class UserMapper implements ObjectMapper<User> {
+        class UserMapper extends ObjectSerializer<User> {
             @Override
             public String map(User object) {
                 return "User: " + object.name;
