@@ -14,9 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-final class UserHandler extends AbstractHandler implements EasyJettyHandler {
+import static com.athaydes.easyjetty.mapper.ObjectMapper.ACCEPT_EVERYTHING;
 
-    static final String ACCEPT_EVERYTHING = "*/*";
+final class UserHandler extends AbstractHandler implements EasyJettyHandler {
 
     private final MethodArbiter methodArbiter;
     private final Responder responder;

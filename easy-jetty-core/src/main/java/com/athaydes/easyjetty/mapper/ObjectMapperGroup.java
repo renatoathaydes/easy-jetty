@@ -1,11 +1,14 @@
 package com.athaydes.easyjetty.mapper;
 
+import com.athaydes.easyjetty.external.MIMEParse;
+import org.eclipse.jetty.http.HttpHeader;
+
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+
+import static com.athaydes.easyjetty.mapper.ObjectMapper.ACCEPT_EVERYTHING;
 
 /**
  * An ObjectMapper group which can use any of the ObjectMappers added to it to map/unmap an
@@ -15,23 +18,23 @@ public class ObjectMapperGroup {
 
     static final String PAYLOAD_TOO_BIG = "Request payload is too big";
 
-    private static final ObjectMapper<String> stringMapper = new ObjectMapper<String>() {
+    private static final ObjectMapper<Object> toStringMapper = new ObjectSerializer<Object>() {
         @Override
-        public String map(String object) {
+        public String map(Object object) {
             return object.toString();
         }
 
         @Override
-        public String unmap(String objectAsString) {
+        public Object unmap(String objectAsString) {
             return objectAsString;
         }
 
         @Override
-        public Class<? extends String> getMappedType() {
-            return String.class;
+        public Class<? extends Object> getMappedType() {
+            return Object.class;
         }
     };
-    private final Map<Class<?>, ObjectMapper<?>> mapperByType = new HashMap<>();
+    private final Map<Class<?>, List<ObjectMapper<?>>> mapperByType = new HashMap<>();
     private final boolean exactTypeOnly;
     private volatile boolean lenient = true;
 
@@ -40,10 +43,10 @@ public class ObjectMapperGroup {
     /**
      * Creates a lenient ObjectMappperGroup.
      * <p/>
-     * This is equivalent to calling <code>new ObjectMapperGroup(false, true)</code>.
+     * This is equivalent to calling <code>new ObjectMapperGroup(true, true)</code>.
      */
     public ObjectMapperGroup() {
-        this(false, true);
+        this(true, true);
     }
 
     /**
@@ -70,7 +73,12 @@ public class ObjectMapperGroup {
      */
     public ObjectMapperGroup withMappers(ObjectMapper... mappers) {
         for (ObjectMapper mapper : mappers) {
-            mapperByType.put(mapper.getMappedType(), mapper);
+            List<ObjectMapper<?>> existingMappers = mapperByType.get(mapper.getMappedType());
+            if (existingMappers == null) {
+                existingMappers = new ArrayList<>(1);
+                mapperByType.put(mapper.getMappedType(), existingMappers);
+            }
+            existingMappers.add(mapper);
         }
         return this;
     }
@@ -88,22 +96,30 @@ public class ObjectMapperGroup {
     }
 
     /**
-     * Maps the given Object to a String using the appropriate ObjectMapper.
+     * Maps the given Object to a String using the first appropriate ObjectMapper encountered.
      * Errors are handled according to the "lenient" and "exactTypeOnly" parameters.
      *
      * @param object to map
      * @return object as String
      */
     public String map(Object object) {
+        return map(object, ACCEPT_EVERYTHING);
+    }
+
+    /**
+     * Maps the given Object to a String using the appropriate ObjectMapper.
+     * Errors are handled according to the "lenient" and "exactTypeOnly" parameters.
+     *
+     * @param object      to map
+     * @param contentType content-type expected (eg. JSON, XML)
+     * @return object as String with the given contentType
+     */
+    public String map(Object object, String contentType) {
         if (object == null) {
             return nullString;
         }
-        // try to find a mapper by the exact type
-        ObjectMapper mapper = findMapper(object);
+        ObjectMapper mapper = findMapperFor(contentType, object.getClass());
         if (mapper == null) {
-            if (lenient) {
-                return stringMapper.map(object.toString());
-            }
             throw new RuntimeException("Cannot map Object of type '" + object.getClass() + "' to a String");
         }
         return mapper.map(object);
@@ -123,24 +139,19 @@ public class ObjectMapperGroup {
      */
     public <T> T unmap(HttpServletRequest request, Class<T> type, int maxContentLength)
             throws IOException {
-        ObjectMapper<?> mapper = mapperByType.get(type);
-        if (lenient && mapper == null && type.equals(String.class)) {
-            mapper = stringMapper;
-        } else if (mapper == null) {
-            throw new RuntimeException("No mapper found for type " + type.getName());
-        }
+        ObjectMapper<T> mapper = findMapperFor(request.getHeader(HttpHeader.ACCEPT.asString()), type);
         if (request.getContentLength() > maxContentLength) {
             throw new IllegalArgumentException(PAYLOAD_TOO_BIG);
         }
         try {
-            StringBuilder sb = readFrom(request.getReader(), maxContentLength);
-            return type.cast(mapper.unmap(sb.toString()));
+            String content = readFrom(request.getReader(), maxContentLength);
+            return type.cast(mapper.unmap(content));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private StringBuilder readFrom(BufferedReader reader, int maxContentLength) throws IOException {
+    private String readFrom(BufferedReader reader, int maxContentLength) throws IOException {
         StringBuilder sb = new StringBuilder();
         char[] charBuffer = new char[128];
         int totalBytes = 0;
@@ -152,21 +163,44 @@ public class ObjectMapperGroup {
             }
             sb.append(charBuffer, 0, bytesRead);
         }
-        return sb;
+        return sb.toString();
     }
 
-    private ObjectMapper findMapper(Object object) {
-        ObjectMapper mapper = mapperByType.get(object.getClass());
-        if (mapper == null && !exactTypeOnly) {
+    private <T> ObjectMapper<T> findMapperFor(String acceptedContentType, Class<T> type) {
+        ObjectMapper<?> result = null;
+        List<ObjectMapper<?>> mappers = findMappersByType(type);
+
+        if (lenient && mappers == null) {
+            result = toStringMapper;
+        } else if (mappers == null) {
+            throw new RuntimeException("No mapper found for type " + type.getName());
+        } else if (acceptedContentType == null || acceptedContentType.equals(ACCEPT_EVERYTHING)) {
+            result = mappers.get(0);
+        } else for (ObjectMapper<?> mapper : mappers) {
+            if (MIMEParse.isAccepted(acceptedContentType, mapper.getContentType())) {
+                result = mapper;
+                break;
+            }
+        }
+        if (result == null) {
+            throw new RuntimeException("Found " + mappers.size() + " mapper(s) for the type " + type.getName() +
+                    ", but no mapper can handle content-type " + acceptedContentType);
+        }
+        return (ObjectMapper<T>) result;
+    }
+
+    private List<ObjectMapper<?>> findMappersByType(Class<?> type) {
+        List<ObjectMapper<?>> mappers = mapperByType.get(type);
+        if (mappers == null && !exactTypeOnly) {
             // if nothing is found, try to find a mapper that can handle an instanceof the type
-            for (Map.Entry<Class<?>, ObjectMapper<?>> entry : mapperByType.entrySet()) {
-                if (entry.getKey().isAssignableFrom(object.getClass())) {
-                    mapper = entry.getValue();
+            for (Map.Entry<Class<?>, List<ObjectMapper<?>>> entry : mapperByType.entrySet()) {
+                if (entry.getKey().isAssignableFrom(type)) {
+                    mappers = entry.getValue();
                     break;
                 }
             }
         }
-        return mapper;
+        return mappers;
     }
 
     /**

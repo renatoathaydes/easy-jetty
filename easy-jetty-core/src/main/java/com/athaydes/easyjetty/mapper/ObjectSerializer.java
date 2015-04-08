@@ -13,4 +13,9 @@ public abstract class ObjectSerializer<T> implements ObjectMapper<T> {
         throw new UnsupportedOperationException("unmap");
     }
 
+    @Override
+    public String getContentType() {
+        return ACCEPT_EVERYTHING;
+    }
+
 }

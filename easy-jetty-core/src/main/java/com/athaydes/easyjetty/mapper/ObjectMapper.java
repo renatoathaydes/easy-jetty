@@ -11,6 +11,11 @@ package com.athaydes.easyjetty.mapper;
 public interface ObjectMapper<T> {
 
     /**
+     * A content-type that includes everything
+     */
+    static final String ACCEPT_EVERYTHING = "*/*";
+
+    /**
      * Turn the given Object into a String representing the body of a response.
      *
      * @param object
@@ -30,5 +35,11 @@ public interface ObjectMapper<T> {
      * @return top super-type of the mapped Objects.
      */
     Class<? extends T> getMappedType();
+
+    /**
+     * @return the content-type(s) that this ObjectMapper can handle. More than one
+     * content-type may be provided comma-separated.
+     */
+    String getContentType();
 
 }

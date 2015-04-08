@@ -240,6 +240,15 @@ public final class MIMEParse {
         return lastOne.quality != 0.0f ? lastOne.mimeType : "";
     }
 
+    /**
+     * @param acceptedContentType acceptable
+     * @param candidate           being checked
+     * @return true if the candidate can be accepted.
+     */
+    public static boolean isAccepted(String acceptedContentType, String candidate) {
+        return !bestMatch(Collections.singletonList(acceptedContentType), candidate).isEmpty();
+    }
+
     // hidden
     private MIMEParse() {
     }
