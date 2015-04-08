@@ -20,7 +20,7 @@ public interface Responder {
         public final Request baseRequest;
         public final Map<String, String> params;
         public final String acceptedContentType;
-        private final ObjectSupport sender;
+        private final ObjectSupport objectSupport;
 
         Exchange(ServletOutputStream out, HttpServletRequest request, HttpServletResponse response,
                  Request baseRequest, Map<String, String> parameters, ObjectSupport objectSupport, String acceptedContentType) {
@@ -29,7 +29,7 @@ public interface Responder {
             this.response = response;
             this.baseRequest = baseRequest;
             this.params = parameters;
-            this.sender = objectSupport;
+            this.objectSupport = objectSupport;
             this.acceptedContentType = acceptedContentType;
         }
 
@@ -41,7 +41,7 @@ public interface Responder {
          * @throws IOException                if a problem occurs while writing the data.
          */
         public void send(Object object) throws IOException {
-            sender.send(object, response);
+            objectSupport.send(object, response);
         }
 
         /**
@@ -56,7 +56,7 @@ public interface Responder {
          */
         public <T> T receiveAs(Class<T> type) {
             try {
-                return sender.receive(request, type);
+                return objectSupport.receive(request, type);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

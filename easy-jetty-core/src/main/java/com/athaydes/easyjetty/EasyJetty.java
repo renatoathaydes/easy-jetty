@@ -24,6 +24,7 @@ import java.util.Map;
 
 import static com.athaydes.easyjetty.PathHelper.handlerPath;
 import static com.athaydes.easyjetty.PathHelper.sanitize;
+import static com.athaydes.easyjetty.mapper.ObjectMapper.ACCEPT_EVERYTHING;
 
 /**
  * Easy-Jetty Server Builder.
@@ -45,6 +46,26 @@ public class EasyJetty {
     private volatile boolean sslOnly;
     private volatile int maxFormSize;
 
+    /**
+     * Build an EasyJetty instance using the default values for all settings.
+     * <p/>
+     * You can configure the server by calling methods using EasyJetty's fluent API.
+     * For example:
+     * <p/>
+     * <code>
+     * new EasyJetty()<br>
+     * .on(GET, "hello", ex -> ex.send("Hello EasyJetty!"))<br>
+     * .resourcesLocation("public/")<br>
+     * .disableDirectoryListing()<br>
+     * .start();
+     * </code>
+     * <p/>
+     * Notice the last call to <code>start()</code> is necessary to actually start the server.
+     * You can stop the server at any time by calling <code>stop()</code>.
+     * <p/>
+     * Many of the settings can only be set while the server is NOT running.
+     * However, you can add/remove handlers without stopping the server.
+     */
     public EasyJetty() {
         restoreDefaults();
     }
@@ -63,6 +84,12 @@ public class EasyJetty {
         maxFormSize = -1;
     }
 
+    /**
+     * Add the given EasyJetty extension to this instance.
+     *
+     * @param extension to add
+     * @return this
+     */
     public EasyJetty withExtension(EasyJettyExtension extension) {
         extensions.add(extension);
         fireEvent(new ExtensionAddedEvent(this, extension));
@@ -113,6 +140,13 @@ public class EasyJetty {
         return this;
     }
 
+    /**
+     * Disables directory listing for static resources.
+     * <p/>
+     * Ignored if a resourcesLocation is not provided.
+     *
+     * @return this
+     */
     public EasyJetty disableDirectoryListing() {
         notRunningProperties.setAllowDirectoryListing(false, server);
         return this;
@@ -172,7 +206,7 @@ public class EasyJetty {
      * @return this
      */
     public EasyJetty on(MethodArbiter methodArbiter, String path, Responder responder) {
-        return on(methodArbiter, path, UserHandler.ACCEPT_EVERYTHING, responder);
+        return on(methodArbiter, path, ACCEPT_EVERYTHING, responder);
     }
 
     /**
@@ -211,36 +245,90 @@ public class EasyJetty {
         return errorHandler;
     }
 
+    /**
+     * Path for the resource to return in case of an error with the given statusCode.
+     *
+     * @param statusCode error status code
+     * @param path       of resource to be provided
+     * @return this
+     */
     public EasyJetty errorPage(int statusCode, String path) {
         getErrorHandler(true).addErrorPage(statusCode, PathHelper.sanitize(path));
         return this;
     }
 
+    /**
+     * Path for the resource to return in case of an error code within the given range.
+     *
+     * @param lowestStatusCode  lowest error status code
+     * @param highestStatusCode highest error status code
+     * @param path              of resource to be provided
+     * @return this
+     */
     public EasyJetty errorPage(int lowestStatusCode, int highestStatusCode, String path) {
         getErrorHandler(true).addErrorPage(lowestStatusCode, highestStatusCode, PathHelper.sanitize(path));
         return this;
     }
 
+    /**
+     * Set the default content type to be used in responses provided by the Server.
+     * If the request handler does not set the response content-type, this value will be used.
+     *
+     * @param contentType the default content type to use.
+     * @return this
+     */
     public EasyJetty defaultContentType(String contentType) {
         this.defaultContentType = contentType;
         return this;
     }
 
+    /**
+     * Set the mapperGroup to be used in (un)-marshalling Objects to/from Strings received
+     * and sent by the Server.
+     *
+     * @param mapperGroup the mapper group to use
+     * @return this
+     */
     public EasyJetty withMapperGroup(ObjectMapperGroup mapperGroup) {
         objectSupport.setMapperGroup(mapperGroup);
         return this;
     }
 
+    /**
+     * Provide the SSL configuration to enable SSL and serve traffic over HTTPS.
+     * <p/>
+     * Notice that the server will still accept HTTP connections! If you do not want that,
+     * use {@link com.athaydes.easyjetty.EasyJetty#sslOnly(SSLConfig)} instead.
+     *
+     * @param config SSL configuration
+     * @return this
+     */
     public EasyJetty ssl(SSLConfig config) {
         notRunningProperties.setSsl(config, server);
         return this;
     }
 
+    /**
+     * Provide the SSL configuration to enable SSL and serve traffic over HTTPS.
+     * <p/>
+     * Instructs EasyJetty to use only SSL with HTTPS, ie. it will NOT server any traffic over HTTP.
+     *
+     * @param config SSL configuration
+     * @return this
+     */
     public EasyJetty sslOnly(SSLConfig config) {
         sslOnly = true;
         return ssl(config);
     }
 
+    /**
+     * Maximum form size allowable. This uses the same mechanism as Jetty does for Servlets,
+     * but for user-provided Responders, you should use the {@link com.athaydes.easyjetty.Responder.Exchange#receiveAs}
+     * method to read Objects from a request in order for this setting to have effect.
+     *
+     * @param maxBytes maximum amount of bytes a form, or request body, may have
+     * @return this
+     */
     public EasyJetty maxFormSize(int maxBytes) {
         if (maxBytes < 0) {
             throw new IllegalArgumentException("MaxBytes must  be 0 or larger");
@@ -264,6 +352,8 @@ public class EasyJetty {
 
     /**
      * Start the server.
+     * <p/>
+     * If the server is already running, this call will be ignored.
      *
      * @return this
      */

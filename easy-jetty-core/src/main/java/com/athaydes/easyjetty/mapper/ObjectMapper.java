@@ -1,8 +1,10 @@
 package com.athaydes.easyjetty.mapper;
 
 /**
- * A mapper from user-defined Objects to Strings
- * (which will be sent in responses from the server).
+ * A mapper from user-defined Objects to Strings and vice-versa.
+ * <p/>
+ * This can be used to serialize an Object to a String and send that in a response,
+ * and to read a request content as an Object.
  *
  * @see com.athaydes.easyjetty.mapper.ObjectSerializer
  */

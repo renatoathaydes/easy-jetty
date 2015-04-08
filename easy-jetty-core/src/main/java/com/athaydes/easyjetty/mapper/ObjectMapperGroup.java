@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * An ObjectMapper group which can use any of the ObjectMappers added to it to map an
- * Object.
+ * An ObjectMapper group which can use any of the ObjectMappers added to it to map/unmap an
+ * Object/String.
  */
 public class ObjectMapperGroup {
 
@@ -62,6 +62,12 @@ public class ObjectMapperGroup {
         this.lenient = lenient;
     }
 
+    /**
+     * Add the given ObjectMappers to this group.
+     *
+     * @param mappers to be added
+     * @return this
+     */
     public ObjectMapperGroup withMappers(ObjectMapper... mappers) {
         for (ObjectMapper mapper : mappers) {
             mapperByType.put(mapper.getMappedType(), mapper);
@@ -103,7 +109,20 @@ public class ObjectMapperGroup {
         return mapper.map(object);
     }
 
-    public <T> T unmap(HttpServletRequest request, Class<T> type, int maxContentLength) {
+    /**
+     * Attempts to unmarshall an Object of type T from the request content.
+     *
+     * @param request          whose content should be unmarshalled
+     * @param type             of the returned Object
+     * @param maxContentLength maximum allowed content length in bytes
+     * @param <T>              type of the returned Object
+     * @return Object of type T
+     * @throws java.lang.RuntimeException         if no mapper is found and this group is not lenient
+     * @throws java.io.IOException                if a problem occurs while reading the request content
+     * @throws java.lang.IllegalArgumentException if the request content length is larger than maxContentLength
+     */
+    public <T> T unmap(HttpServletRequest request, Class<T> type, int maxContentLength)
+            throws IOException {
         ObjectMapper<?> mapper = mapperByType.get(type);
         if (lenient && mapper == null && type.equals(String.class)) {
             mapper = stringMapper;
@@ -150,6 +169,9 @@ public class ObjectMapperGroup {
         return mapper;
     }
 
+    /**
+     * Remove all ObjectMappers from this group.
+     */
     public void clear() {
         mapperByType.clear();
     }
