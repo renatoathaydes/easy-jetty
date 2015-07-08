@@ -35,12 +35,17 @@ public interface Responder {
 
         /**
          * Sends the given object as the response content.
+         * <p/>
+         * If object is null, a 404 response is sent instead.
          *
-         * @param object to send back
+         * @param object to send back, or null if 404 (Not found)
          * @throws java.lang.RuntimeException if no ObjectMapper can be found for the given object.
          * @throws IOException                if a problem occurs while writing the data.
          */
         public void send(Object object) throws IOException {
+            if (object == null) {
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            }
             objectSupport.send(object, response);
         }
 
