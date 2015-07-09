@@ -8,6 +8,8 @@ import spock.lang.Specification
 
 import javax.servlet.http.HttpServletRequest
 
+import static com.athaydes.easyjetty.mapper.ObjectMapper.ACCEPT_EVERYTHING
+
 class ObjectMapperGroupSpec extends Specification {
 
     def "Simple ObjectMapperGroup with no mappers should map by calling value.toString()"() {
@@ -100,12 +102,12 @@ class ObjectMapperGroupSpec extends Specification {
 
         and: 'A Stubbed request whose content is a Person'
         def personReq = Stub(HttpServletRequest)
-        personReq.getHeader(HttpHeader.ACCEPT.asString()) >> ObjectMapper.ACCEPT_EVERYTHING
+        personReq.getHeader(HttpHeader.ACCEPT.asString()) >> ACCEPT_EVERYTHING
         personReq.getReader() >> new BufferedReader(new StringReader(value as String))
 
         and: 'A Stubbed request whose content is a Person'
         def animalReq = Stub(HttpServletRequest)
-        animalReq.getHeader(HttpHeader.ACCEPT.asString()) >> ObjectMapper.ACCEPT_EVERYTHING
+        animalReq.getHeader(HttpHeader.ACCEPT.asString()) >> ACCEPT_EVERYTHING
         animalReq.getReader() >> new BufferedReader(new StringReader(value as String))
 
         when: 'example values unmapped to a Person and to an Animal'
@@ -138,6 +140,78 @@ class ObjectMapperGroupSpec extends Specification {
         new WildCat()                     | 'Animal --- cat'
         new DomesticCat(name: 'Tom')      | 'Animal --- cat'
         new Person(name: 'John', age: 30) | 'John->30'
+    }
+
+    def "A lenient ObjectMapperGroup should be able to map all Collections of Objects for which a Mapper exists"() {
+        given: 'A lenient ObjectMapperGroup with a PersonObjectMapper and a StringObjectMapper'
+        def mapperGroup = new ObjectMapperGroup(true, true)
+                .withMappers(new PersonObjectMapper(), new StringObjectMapper())
+
+        when: 'example values that are a Collection of Persons or Strings are mapped to a String'
+        def result = mapperGroup.map(value)
+
+        then: 'the result is as expected'
+        result == expected
+
+        where:
+        value                               | expected
+        []                                  | '[]'
+        ['', 'ho']                          | '[String:, String:ho]'
+        ['hej']                             | '[String:hej]'
+        [new Person(name: 'Mike', age: 32)] | '[Mike->32]'
+    }
+
+    def "A ObjectMapperGroup should be able to map all Collections of a type for which a Mapper exists"() {
+        given: 'A ObjectMapperGroup with a PersonObjectMapper and a StringObjectMapper'
+        def mapperGroup = new ObjectMapperGroup(false, false)
+                .withCollectionMappers(new CollectionMapperParams(ACCEPT_EVERYTHING, ' ; ', '<<', '>>'))
+                .withMappers(new PersonObjectMapper(), new StringObjectMapper())
+
+        when: 'example values that are a Collection of Persons or Strings are mapped to a String'
+        def result = mapperGroup.map(value)
+
+        then: 'the result is as expected'
+        result == expected
+
+        where:
+        value                               | expected
+        []                                  | '<<>>'
+        ['', 'ho']                          | '<<String: ; String:ho>>'
+        ['hej']                             | '<<String:hej>>'
+        [new Person(name: 'Mike', age: 32)] | '<<Mike->32>>'
+    }
+
+    def "A ObjectMapperGroup should be able to unmap all Collections of Objects for which a Mapper exists"() {
+        given: 'A non-lenient ObjectMapperGroup with a PersonObjectMapper and an AnimalObjectMapper'
+        def mapperGroup = new ObjectMapperGroup(false, false)
+                .withCollectionMappers(new CollectionMapperParams(ACCEPT_EVERYTHING, ' ; ', '<<', '>>'))
+                .withMappers(new PersonObjectMapper(), new AnimalObjectMapper())
+
+        and: 'A Stubbed request whose content is a Collection of Person'
+        def personReq = Stub(HttpServletRequest)
+        personReq.getHeader(HttpHeader.ACCEPT.asString()) >> ACCEPT_EVERYTHING
+        personReq.getReader() >> new BufferedReader(new StringReader(value as String))
+
+        and: 'A Stubbed request whose content is a Person'
+        def animalReq = Stub(HttpServletRequest)
+        animalReq.getHeader(HttpHeader.ACCEPT.asString()) >> ACCEPT_EVERYTHING
+        animalReq.getReader() >> new BufferedReader(new StringReader(value as String))
+
+        when: 'example values unmapped to a Person and to an Animal'
+        def persons = mapperGroup.unmapAll(personReq, Person, 9999999)
+        def cats = mapperGroup.unmapAll(animalReq, DomesticCat, 9999999)
+
+        then: 'the result is as expected for both Person and Animal'
+        persons == expectedPersons
+        cats == expectedAnimals
+
+        where:
+        value          | expectedPersons                     | expectedAnimals
+        '<<hej ; ho>>' | [new Person(name: 'hej', age: -1),
+                          new Person(name: 'ho', age: -1)]   |
+                [new DomesticCat(name: 'hej'),
+                 new DomesticCat(name: 'ho')]
+        '<<Mike>>'     | [new Person(name: 'Mike', age: -1)] | [new DomesticCat(name: 'Mike')]
     }
 
     def "The default nullString is used to map null"() {

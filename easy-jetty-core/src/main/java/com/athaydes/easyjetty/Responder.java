@@ -6,6 +6,8 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -66,6 +68,25 @@ public interface Responder {
                 throw new RuntimeException(e);
             }
         }
+
+        /**
+         * Receives the request content and map it to a List of instances of the given type.
+         *
+         * @param type to map the request content to.
+         * @param <T>  type
+         * @return instance of T, mapped from the request content
+         * @throws java.lang.IllegalArgumentException if the request's content length is too big.
+         * @throws java.lang.RuntimeException         if an IOException occurs while reading the request data
+         *                                            or no ObjectMapper can be found for the given type.
+         */
+        public <T> List<T> receiveAll(Class<T> type) {
+            try {
+                return new ArrayList<>(objectSupport.receiveAll(request, type));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
     }
 
     /**
@@ -74,6 +95,6 @@ public interface Responder {
      * @param exchange useful resources for an exchange (request/response)
      * @throws IOException in case the stream is closed or there's a problem accessing some resource
      */
-    abstract public void respond(Exchange exchange) throws IOException;
+    void respond(Exchange exchange) throws IOException;
 
 }

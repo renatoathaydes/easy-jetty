@@ -1,10 +1,10 @@
 package com.athaydes.easyjetty.mapper;
 
 /**
- * Simple ObjectMapper which can only serialize Objects into Strings.
+ * Simple ObjectMapper which can serialize Objects into Strings.
  * <p/>
- * It will throw an <code>UnsupportedOperationException</code> if the
- * <code>unmap</code> method is called.
+ * The default implementation of <code>unmap(..)</code> will throw an
+ * <code>UnsupportedOperationException</code>.
  */
 public abstract class ObjectSerializer<T> implements ObjectMapper<T> {
 

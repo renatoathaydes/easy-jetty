@@ -2,10 +2,14 @@ package com.athaydes.easyjetty;
 
 
 import com.athaydes.easyjetty.mapper.ObjectMapperGroup;
+import org.eclipse.jetty.http.HttpHeader;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collection;
+
+import static com.athaydes.easyjetty.mapper.ObjectMapper.ACCEPT_EVERYTHING;
 
 class ObjectSupport {
 
@@ -24,11 +28,17 @@ class ObjectSupport {
     }
 
     void send(Object object, HttpServletResponse response) throws IOException {
-        response.getOutputStream().println(mapperGroup.map(object));
+        String contentType = response.getHeader(HttpHeader.CONTENT_TYPE.asString());
+        String data = mapperGroup.map(object, contentType != null ? contentType : ACCEPT_EVERYTHING);
+        response.getOutputStream().println(data);
     }
 
     <T> T receive(HttpServletRequest request, Class<T> type) throws IOException {
         return mapperGroup.unmap(request, type, easyJetty.getMaxFormSize());
+    }
+
+    <T> Collection<T> receiveAll(HttpServletRequest request, Class<T> type) throws IOException {
+        return mapperGroup.unmapAll(request, type, easyJetty.getMaxFormSize());
     }
 
     void clear() {

@@ -30,13 +30,17 @@ public class ObjectMapperGroup {
         }
 
         @Override
-        public Class<? extends Object> getMappedType() {
+        public Class<?> getMappedType() {
             return Object.class;
         }
     };
-    private final Map<Class<?>, List<ObjectMapper<?>>> mapperByType = new HashMap<>();
+
+    private final CollectionMapper defaultCollectionMapper =
+            new CollectionMapperParams(ACCEPT_EVERYTHING, ", ", "[", "]");
+    private final Map<Class<?>, List<ObjectMapper<?>>> mapperByType = new HashMap<>(4);
+    private final List<CollectionMapper> collectionMappers = new ArrayList<>(2);
     private final boolean exactTypeOnly;
-    private volatile boolean lenient = true;
+    private final boolean lenient;
 
     private volatile String nullString = "<null>";
 
@@ -63,6 +67,7 @@ public class ObjectMapperGroup {
     public ObjectMapperGroup(boolean exactTypeOnly, boolean lenient) {
         this.exactTypeOnly = exactTypeOnly;
         this.lenient = lenient;
+        defaultCollectionMapper.setMapperGroup(this);
     }
 
     /**
@@ -79,6 +84,20 @@ public class ObjectMapperGroup {
                 mapperByType.put(mapper.getMappedType(), existingMappers);
             }
             existingMappers.add(mapper);
+        }
+        return this;
+    }
+
+    /**
+     * Use the given CollectionMappers to map/unmap Collections.
+     *
+     * @param mappers to be added
+     * @return this
+     */
+    public ObjectMapperGroup withCollectionMappers(CollectionMapper... mappers) {
+        for (CollectionMapper mapper : mappers) {
+            mapper.setMapperGroup(this);
+            collectionMappers.add(mapper);
         }
         return this;
     }
@@ -126,7 +145,7 @@ public class ObjectMapperGroup {
     }
 
     /**
-     * Attempts to unmarshall an Object of type T from the request content.
+     * Attempts to unmap an Object of type T from the request content.
      *
      * @param request          whose content should be unmarshalled
      * @param type             of the returned Object
@@ -139,16 +158,26 @@ public class ObjectMapperGroup {
      */
     public <T> T unmap(HttpServletRequest request, Class<T> type, int maxContentLength)
             throws IOException {
-        ObjectMapper<T> mapper = findMapperFor(request.getHeader(HttpHeader.ACCEPT.asString()), type);
         if (request.getContentLength() > maxContentLength) {
             throw new IllegalArgumentException(PAYLOAD_TOO_BIG);
         }
-        try {
-            String content = readFrom(request.getReader(), maxContentLength);
-            return type.cast(mapper.unmap(content));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        String content = readFrom(request.getReader(), maxContentLength);
+        return unmap(content, type, request.getHeader(HttpHeader.ACCEPT.asString()));
+    }
+
+    public <T> T unmap(String objectAsString, Class<T> type, String contentType) {
+        ObjectMapper<T> mapper = findMapperFor(contentType, type);
+        return mapper.unmap(objectAsString);
+    }
+
+    public <T> Collection<T> unmapAll(HttpServletRequest request, Class<T> type, int maxContentLength)
+            throws IOException {
+        CollectionMapper mapper = findMapperByContentType(request.getHeader(HttpHeader.ACCEPT.asString()), collectionMappers);
+        if (request.getContentLength() > maxContentLength) {
+            throw new IllegalArgumentException(PAYLOAD_TOO_BIG);
         }
+        String content = readFrom(request.getReader(), maxContentLength);
+        return mapper.unmapAll(content, type);
     }
 
     private String readFrom(BufferedReader reader, int maxContentLength) throws IOException {
@@ -168,6 +197,19 @@ public class ObjectMapperGroup {
 
     private <T> ObjectMapper<T> findMapperFor(String acceptedContentType, Class<T> type) {
         ObjectMapper<?> result = null;
+
+        if (Collection.class.isAssignableFrom(type)) {
+            if (!collectionMappers.isEmpty()) {
+                result = findMapperByContentType(acceptedContentType, collectionMappers);
+            } else if (lenient) {
+                result = defaultCollectionMapper;
+            }
+        }
+
+        if (result != null) {
+            return (ObjectMapper<T>) result;
+        }
+
         List<ObjectMapper<?>> mappers = findMappersByType(type);
 
         if (lenient && mappers == null) {
@@ -176,17 +218,27 @@ public class ObjectMapperGroup {
             throw new RuntimeException("No mapper found for type " + type.getName());
         } else if (acceptedContentType == null || acceptedContentType.equals(ACCEPT_EVERYTHING)) {
             result = mappers.get(0);
-        } else for (ObjectMapper<?> mapper : mappers) {
-            if (MIMEParse.isAccepted(acceptedContentType, mapper.getContentType())) {
-                result = mapper;
-                break;
-            }
+        } else {
+            result = findMapperByContentType(acceptedContentType, mappers);
         }
         if (result == null) {
             throw new RuntimeException("Found " + mappers.size() + " mapper(s) for the type " + type.getName() +
                     ", but no mapper can handle content-type " + acceptedContentType);
         }
         return (ObjectMapper<T>) result;
+    }
+
+    private static <M extends ObjectMapper<?>> M findMapperByContentType(
+            String acceptedContentType, List<M> mappers) {
+        if (acceptedContentType == null) {
+            acceptedContentType = ACCEPT_EVERYTHING;
+        }
+        for (M mapper : mappers) {
+            if (MIMEParse.isAccepted(acceptedContentType, mapper.getContentType())) {
+                return mapper;
+            }
+        }
+        return null;
     }
 
     private List<ObjectMapper<?>> findMappersByType(Class<?> type) {
@@ -209,5 +261,4 @@ public class ObjectMapperGroup {
     public void clear() {
         mapperByType.clear();
     }
-
 }

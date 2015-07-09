@@ -18,7 +18,7 @@ public interface ObjectMapper<T> {
     /**
      * Turn the given Object into a String representing the body of a response.
      *
-     * @param object
+     * @param object to be mapped to a String
      * @return response body
      */
     String map(T object);
