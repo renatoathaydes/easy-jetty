@@ -33,6 +33,10 @@ class EasyJettyErrorHandler extends ErrorHandler {
 
         request.setAttribute(EASY_JETTY_ERROR, true);
         String path = pathByStatusCode.get(response.getStatus());
+        if (path == null) {
+            return;
+        }
+
         final AtomicBoolean wrappedResponseOk = new AtomicBoolean(false);
 
         HttpServletResponse wrappedResponse = new HttpServletResponseWrapper(response) {

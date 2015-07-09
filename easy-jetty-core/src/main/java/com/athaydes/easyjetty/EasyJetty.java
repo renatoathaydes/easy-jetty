@@ -41,6 +41,7 @@ public class EasyJetty {
     private volatile HandlerCollection allHandler;
     private volatile EasyJettyErrorHandler errorHandler;
     private volatile String defaultContentType;
+    private volatile String defaultAccept;
     private volatile Server server;
     private volatile ServletContextHandler servletHandler;
     private volatile boolean sslOnly;
@@ -80,6 +81,7 @@ public class EasyJetty {
         notRunningProperties.setVirtualHosts(server);
         allHandler = new HandlerCollection();
         defaultContentType = null;
+        defaultAccept = null;
         errorHandler = null;
         maxFormSize = -1;
     }
@@ -206,7 +208,7 @@ public class EasyJetty {
      * @return this
      */
     public EasyJetty on(MethodArbiter methodArbiter, String path, Responder responder) {
-        return on(methodArbiter, path, ACCEPT_EVERYTHING, responder);
+        return on(methodArbiter, path, defaultAccept != null ? defaultAccept : ACCEPT_EVERYTHING, responder);
     }
 
     /**
@@ -279,6 +281,21 @@ public class EasyJetty {
      */
     public EasyJetty defaultContentType(String contentType) {
         this.defaultContentType = contentType;
+        return this;
+    }
+
+    /**
+     * Set the default content type to be accepted by handlers when receiving requests.
+     * <p/>
+     * If not set, the Accept header of incoming requests will be ignored by any
+     * handlers that were declared without a content type.
+     *
+     * @param contentType to accept by default
+     * @return this
+     * @see com.athaydes.easyjetty.EasyJetty#on(MethodArbiter, String, String, Responder)
+     */
+    public EasyJetty defaultAccept(String contentType) {
+        this.defaultAccept = contentType;
         return this;
     }
 
