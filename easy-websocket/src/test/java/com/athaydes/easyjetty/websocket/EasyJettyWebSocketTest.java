@@ -124,7 +124,7 @@ public class EasyJettyWebSocketTest {
         final List<String> serverMessages = new ArrayList<>();
         final AtomicBoolean done = new AtomicBoolean(false);
 
-        jetty.withMapperGroup(new ObjectMapperGroup().withMappers(new ObjectSerializer() {
+        jetty.withMapperGroup(new ObjectMapperGroup(false, true).withMappers(new ObjectSerializer() {
             @Override
             public String map(Object object) {
                 return object.getClass().getSimpleName() + ":" + object.toString();
