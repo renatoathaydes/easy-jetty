@@ -102,12 +102,12 @@ class ObjectMapperGroupSpec extends Specification {
 
         and: 'A Stubbed request whose content is a Person'
         def personReq = Stub(HttpServletRequest)
-        personReq.getHeader(HttpHeader.ACCEPT.asString()) >> ACCEPT_EVERYTHING
+        personReq.getHeader(HttpHeader.CONTENT_TYPE.asString()) >> ACCEPT_EVERYTHING
         personReq.getReader() >> new BufferedReader(new StringReader(value as String))
 
         and: 'A Stubbed request whose content is a Person'
         def animalReq = Stub(HttpServletRequest)
-        animalReq.getHeader(HttpHeader.ACCEPT.asString()) >> ACCEPT_EVERYTHING
+        animalReq.getHeader(HttpHeader.CONTENT_TYPE.asString()) >> ACCEPT_EVERYTHING
         animalReq.getReader() >> new BufferedReader(new StringReader(value as String))
 
         when: 'example values unmapped to a Person and to an Animal'
@@ -159,6 +159,24 @@ class ObjectMapperGroupSpec extends Specification {
         ['', 'ho']                          | '[String:, String:ho]'
         ['hej']                             | '[String:hej]'
         [new Person(name: 'Mike', age: 32)] | '[Mike->32]'
+    }
+
+    def "A lenient ObjectMapperGroup should be able to map form contents to Map without any ObjectMappers added"() {
+        given: 'A lenient ObjectMapperGroup without any ObjectMappers added'
+        def mapperGroup = new ObjectMapperGroup(true, true)
+
+        when: 'unmapping example values that are Strings in html form format'
+        Map result = mapperGroup.unmap(value, Map, 'application/x-www-form-urlencoded')
+
+        then: 'the result is a Map with the form entries'
+        result.isEmpty() && expected.isEmpty() || result == expected
+
+        where:
+        value                                                      | expected
+        ''                                                         | [:]
+        'a=1'                                                      | ['a': '1']
+        'Name=Jonathan+Doe&Age=23&Formula=a+%2B+b+%3D%3D+13%25%21' |
+                ['Name': 'Jonathan Doe', 'Age': '23', 'Formula': 'a + b == 13%!']
     }
 
     def "A ObjectMapperGroup should be able to map all Collections of a type for which a Mapper exists"() {
@@ -228,7 +246,7 @@ class ObjectMapperGroupSpec extends Specification {
         given: 'A Stubbed request with JSON'
         def request = Stub(HttpServletRequest)
         request.getReader() >> new BufferedReader(new StringReader('example'))
-        request.getHeader(HttpHeader.ACCEPT.asString()) >> 'text/json'
+        request.getHeader(HttpHeader.CONTENT_TYPE.asString()) >> 'text/json'
 
         and: 'A non-lenient MapperGroup which has a mapper for JSON'
         def mapper = Stub(ObjectMapper)

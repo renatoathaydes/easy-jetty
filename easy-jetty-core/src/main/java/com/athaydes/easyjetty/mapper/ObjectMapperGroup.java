@@ -2,11 +2,15 @@ package com.athaydes.easyjetty.mapper;
 
 import com.athaydes.easyjetty.external.MIMEParse;
 import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.util.StringUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static com.athaydes.easyjetty.mapper.ObjectMapper.ACCEPT_EVERYTHING;
 
@@ -162,7 +166,7 @@ public class ObjectMapperGroup {
             throw new IllegalArgumentException(PAYLOAD_TOO_BIG);
         }
         String content = readFrom(request.getReader(), maxContentLength);
-        return unmap(content, type, request.getHeader(HttpHeader.ACCEPT.asString()));
+        return unmap(content, type, request.getHeader(HttpHeader.CONTENT_TYPE.asString()));
     }
 
     public <T> T unmap(String objectAsString, Class<T> type, String contentType) {
@@ -171,7 +175,32 @@ public class ObjectMapperGroup {
             T result = type.cast(mapper.unmap(objectAsString));
             return result;
         } catch (ClassCastException e) {
+            if (Map.class.equals(type) && contentType.equals("application/x-www-form-urlencoded")) {
+                return type.cast(unmapFormData(objectAsString));
+            }
             throw new RuntimeException("No ObjectMapper found to unmap object to type " + type.getSimpleName());
+        }
+    }
+
+    private Map unmapFormData(String objectAsString) {
+        Map result = new HashMap();
+        try {
+            String[] formParts = objectAsString.split(Pattern.quote("&"));
+            for (String formPart : formParts) {
+                if (StringUtil.isBlank(formPart)) {
+                    continue;
+                }
+                String[] entry = formPart.split(Pattern.quote("="));
+                String key = URLDecoder.decode(entry[0], "UTF-8");
+                String value = "";
+                if (entry.length > 1) {
+                    value = URLDecoder.decode(entry[1], "UTF-8");
+                }
+                result.put(key, value);
+            }
+            return result;
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e.toString());
         }
     }
 
