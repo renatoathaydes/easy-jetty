@@ -166,8 +166,13 @@ public class ObjectMapperGroup {
     }
 
     public <T> T unmap(String objectAsString, Class<T> type, String contentType) {
-        ObjectMapper<T> mapper = findMapperFor(contentType, type);
-        return mapper.unmap(objectAsString);
+        ObjectMapper mapper = findMapperFor(contentType, type);
+        try {
+            T result = type.cast(mapper.unmap(objectAsString));
+            return result;
+        } catch (ClassCastException e) {
+            throw new RuntimeException("No ObjectMapper found to unmap object to type " + type.getSimpleName());
+        }
     }
 
     public <T> Collection<T> unmapAll(HttpServletRequest request, Class<T> type, int maxContentLength)
@@ -195,7 +200,7 @@ public class ObjectMapperGroup {
         return sb.toString();
     }
 
-    private <T> ObjectMapper<T> findMapperFor(String acceptedContentType, Class<T> type) {
+    private ObjectMapper<?> findMapperFor(String acceptedContentType, Class<?> type) {
         ObjectMapper<?> result = null;
 
         if (Collection.class.isAssignableFrom(type)) {
@@ -207,7 +212,7 @@ public class ObjectMapperGroup {
         }
 
         if (result != null) {
-            return (ObjectMapper<T>) result;
+            return result;
         }
 
         List<ObjectMapper<?>> mappers = findMappersByType(type);
@@ -225,7 +230,7 @@ public class ObjectMapperGroup {
             throw new RuntimeException("Found " + mappers.size() + " mapper(s) for the type " + type.getName() +
                     ", but no mapper can handle content-type " + acceptedContentType);
         }
-        return (ObjectMapper<T>) result;
+        return result;
     }
 
     private static <M extends ObjectMapper<?>> M findMapperByContentType(
