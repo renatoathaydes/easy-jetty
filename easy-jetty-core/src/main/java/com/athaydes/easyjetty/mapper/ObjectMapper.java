@@ -32,6 +32,15 @@ public interface ObjectMapper<T> {
     T unmap(String objectAsString);
 
     /**
+     * Turn the given String into an Object of type S, which is a sub-type of T.
+     *
+     * @param objectAsString to be transformed
+     * @param type
+     * @return Object of type S
+     */
+    <S extends T> S unmap(String objectAsString, Class<S> type);
+
+    /**
      * @return top super-type of the mapped Objects.
      */
     Class<? extends T> getMappedType();

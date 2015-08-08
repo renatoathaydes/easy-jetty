@@ -22,7 +22,7 @@ public class ObjectMapperGroup {
 
     static final String PAYLOAD_TOO_BIG = "Request payload is too big";
 
-    private static final ObjectMapper<Object> toStringMapper = new ObjectSerializer<Object>() {
+    private static final ObjectMapper<Object> PRIMITIVE_MAPPER = new ObjectSerializer<Object>() {
         @Override
         public String map(Object object) {
             return object.toString();
@@ -31,6 +31,29 @@ public class ObjectMapperGroup {
         @Override
         public Object unmap(String objectAsString) {
             return objectAsString;
+        }
+
+        @Override
+        public <S> S unmap(String objectAsString, Class<S> type) {
+            if (type.equals(Integer.class)) {
+                return type.cast(Integer.valueOf(objectAsString));
+            }
+            if (type.equals(Float.class)) {
+                return type.cast(Float.valueOf(objectAsString));
+            }
+            if (type.equals(Long.class)) {
+                return type.cast(Long.valueOf(objectAsString));
+            }
+            if (type.equals(Double.class)) {
+                return type.cast(Double.valueOf(objectAsString));
+            }
+            if (type.equals(Byte.class)) {
+                return type.cast(Byte.valueOf(objectAsString));
+            }
+            if (type.equals(Character.class) && objectAsString.length() == 1) {
+                return type.cast(objectAsString.charAt(0));
+            }
+            return super.unmap(objectAsString, type);
         }
 
         @Override
@@ -171,15 +194,13 @@ public class ObjectMapperGroup {
 
     public <T> T unmap(String objectAsString, Class<T> type, String contentType) {
         ObjectMapper mapper = findMapperFor(contentType, type);
-        try {
-            T result = type.cast(mapper.unmap(objectAsString));
-            return result;
-        } catch (ClassCastException e) {
+        if (mapper == PRIMITIVE_MAPPER) { // intentional ref check
             if (Map.class.equals(type) && contentType.equals("application/x-www-form-urlencoded")) {
+                // special-case for forms
                 return type.cast(unmapFormData(objectAsString));
             }
-            throw new RuntimeException("No ObjectMapper found to unmap object to type " + type.getSimpleName());
         }
+        return type.cast(mapper.unmap(objectAsString, type));
     }
 
     private Map unmapFormData(String objectAsString) {
@@ -247,7 +268,7 @@ public class ObjectMapperGroup {
         List<ObjectMapper<?>> mappers = findMappersByType(type);
 
         if (lenient && mappers == null) {
-            result = toStringMapper;
+            result = PRIMITIVE_MAPPER;
         } else if (mappers == null) {
             throw new RuntimeException("No mapper found for type " + type.getName());
         } else if (acceptedContentType == null || acceptedContentType.equals(ACCEPT_EVERYTHING)) {

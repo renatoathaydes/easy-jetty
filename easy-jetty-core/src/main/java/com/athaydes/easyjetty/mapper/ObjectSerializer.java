@@ -10,6 +10,11 @@ public abstract class ObjectSerializer<T> implements ObjectMapper<T> {
 
     @Override
     public T unmap(String objectAsString) {
+        return unmap(objectAsString, getMappedType());
+    }
+
+    @Override
+    public <S extends T> S unmap(String objectAsString, Class<S> type) {
         throw new UnsupportedOperationException("unmap");
     }
 

@@ -21,5 +21,15 @@ public abstract class CollectionMapper implements ObjectMapper<Collection> {
         return Collection.class;
     }
 
+    @Override
+    public <S extends Collection> S unmap(String objectAsString, Class<S> type) {
+        Collection result = unmapAll(objectAsString, Object.class);
+        if (type.isAssignableFrom(result.getClass())) {
+            return type.cast(result);
+        } else {
+            throw new ClassCastException("Cannot cast object to " + type.getName());
+        }
+    }
+
     public abstract <T> Collection<T> unmapAll(String objectAsString, Class<T> type);
 }

@@ -3,13 +3,17 @@ package com.athaydes.easyjetty;
 import com.athaydes.easyjetty.http.MethodArbiter.Method;
 import com.athaydes.easyjetty.mapper.ObjectMapperGroup;
 import com.athaydes.easyjetty.mapper.ObjectSerializer;
+import org.boon.Maps;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static com.athaydes.easyjetty.http.MethodArbiter.Method.*;
 import static com.athaydes.easyjetty.http.MethodArbiterFactory.*;
@@ -381,6 +385,90 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
         // THEN the expected response is provided
         assertEquals("User: Mark", exchange1.getContentAsString().trim());
         assertEquals("Bool: true", exchange2.getContentAsString().trim());
+    }
+
+    @Test
+    public void canReceiveFormAsMap() throws Exception {
+        easy.on(POST, "/my-form", "application/x-www-form-urlencoded", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                Map body = exchange.receiveAs(Map.class);
+                exchange.send(body);
+            }
+        }).start();
+
+        // WHEN a form is POSTed to the server
+        ContentResponse exchange1 = sendReqAndWait("POST", "http://localhost:8080/my-form",
+                Maps.map(HttpHeader.CONTENT_TYPE.asString(), "application/x-www-form-urlencoded"),
+                "key1=value1&k2=v2");
+
+        // THEN the expected response is provided
+        assertEquals(Maps.map("key1", "value1", "k2", "v2").toString(),
+                exchange1.getContentAsString().trim());
+    }
+
+    @Test
+    public void primitiveMapperTest() throws Exception {
+        //TODO
+        easy.on(POST, "/integer", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                int body = exchange.receiveAs(Integer.class);
+                exchange.send(body);
+            }
+        }).on(POST, "/float", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                float body = exchange.receiveAs(Float.class);
+                exchange.send(body);
+            }
+        }).on(POST, "/double", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                double body = exchange.receiveAs(Double.class);
+                exchange.send(body);
+            }
+        }).on(POST, "/long", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                long body = exchange.receiveAs(Long.class);
+                exchange.send(body);
+            }
+        }).on(POST, "/byte", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                byte body = exchange.receiveAs(Byte.class);
+                exchange.send(body);
+            }
+        }).on(POST, "/char", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                char body = exchange.receiveAs(Character.class);
+                exchange.send(body);
+            }
+        }).start();
+
+        // WHEN a message with each primitive type is POSTed to the server
+        ContentResponse intExchange = sendReqAndWait("POST", "http://localhost:8080/integer",
+                Collections.<String, String>emptyMap(), "42");
+        ContentResponse floatExchange = sendReqAndWait("POST", "http://localhost:8080/float",
+                Collections.<String, String>emptyMap(), "42.4");
+        ContentResponse doubleExchange = sendReqAndWait("POST", "http://localhost:8080/double",
+                Collections.<String, String>emptyMap(), "0.42");
+        ContentResponse longExchange = sendReqAndWait("POST", "http://localhost:8080/long",
+                Collections.<String, String>emptyMap(), "43");
+        ContentResponse byteExchange = sendReqAndWait("POST", "http://localhost:8080/byte",
+                Collections.<String, String>emptyMap(), "44");
+        ContentResponse charExchange = sendReqAndWait("POST", "http://localhost:8080/char",
+                Collections.<String, String>emptyMap(), "c");
+
+        // THEN the expected responses are provided
+        assertEquals("42", intExchange.getContentAsString().trim());
+        assertEquals("42.4", floatExchange.getContentAsString().trim());
+        assertEquals("0.42", doubleExchange.getContentAsString().trim());
+        assertEquals("43", longExchange.getContentAsString().trim());
+        assertEquals("44", byteExchange.getContentAsString().trim());
+        assertEquals("c", charExchange.getContentAsString().trim());
     }
 
     @Test
