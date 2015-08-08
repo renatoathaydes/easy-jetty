@@ -90,7 +90,9 @@ final class UserHandler extends AbstractHandler implements EasyJettyHandler {
     }
 
     private String getAcceptedContentType(String acceptHeader) {
-        return acceptEverything ? ACCEPT_EVERYTHING : MIMEParse.bestMatch(acceptedContentTypes, acceptHeader);
+        return acceptEverything || (acceptHeader == null) ?
+                ACCEPT_EVERYTHING :
+                MIMEParse.bestMatch(acceptedContentTypes, acceptHeader);
     }
 
 }
