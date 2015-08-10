@@ -493,12 +493,12 @@ public class EasyJetty {
     private void initializeServer() {
         initializeServletHandler();
         initializeFilters();
-        initializeRequestLogHandler();
         configHandlers();
 
         server = new Server(notRunningProperties.getPort());
         server.setHandler(allHandler);
 
+        initializeRequestLogHandler();
         initializeErrorHandler();
         initializeSSL();
         initializeServerAttributes();
@@ -511,10 +511,11 @@ public class EasyJetty {
     }
 
     private void initializeRequestLogHandler() {
-        RequestLogHandler requestLogHandler = new RequestLogHandler();
         RequestLog requestLog = notRunningProperties.getRequestLog();
         if (requestLog != null) {
+            RequestLogHandler requestLogHandler = new RequestLogHandler();
             requestLogHandler.setRequestLog(requestLog);
+            allHandler.addHandler(requestLogHandler);
         }
     }
 
