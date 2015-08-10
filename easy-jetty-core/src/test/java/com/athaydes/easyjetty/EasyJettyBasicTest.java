@@ -4,16 +4,25 @@ package com.athaydes.easyjetty;
 import groovy.servlet.AbstractHttpServlet;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.server.NCSARequestLog;
+import org.eclipse.jetty.server.RequestLog;
 import org.junit.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Callable;
 
+import static com.athaydes.easyjetty.http.MethodArbiter.Method.GET;
 import static com.athaydes.easyjetty.http.MethodArbiter.Method.POST;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.*;
 
 public class EasyJettyBasicTest extends EasyJettyTest {
@@ -146,6 +155,56 @@ public class EasyJettyBasicTest extends EasyJettyTest {
         ContentResponse response2 = sendReqAndWait("POST", "http://localhost:8080/data",
                 Collections.<String, String>emptyMap(), randomPayloadOfSize(11));
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, response2.getStatus());
+    }
+
+    @Test
+    public void requestLogHandlerIsCalledOnRequest() throws Exception {
+        final String logName = "requestLogHandlerIsCalledOnRequest.log";
+        final File logFile = new File("build/" + logName);
+        if (logFile.exists()) {
+            assertTrue(logFile.delete());
+        }
+
+        // GIVEN A RequestLog is configured to log to a file
+        RequestLog requestLog = new NCSARequestLog(logFile.getAbsolutePath());
+
+        // WHEN requests are made to some handlers and static resources
+        easy.on(GET, "/whatever", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.send("ok");
+            }
+        }).on(POST, "/ignore", new Responder() {
+            @Override
+            public void respond(Exchange exchange) throws IOException {
+                exchange.send("ok");
+            }
+        }).resourcesLocation(".").requestLog(requestLog).start();
+
+        ContentResponse response1 = sendReqAndWait("GET", "http://localhost:8080/whatever");
+        ContentResponse response2 = sendReqAndWait("POST", "http://localhost:8080/ignore");
+        ContentResponse response3 = sendReqAndWait("GET", "http://localhost:8080/build.gradle");
+
+        // THEN all requests are successful
+        assertEquals(HttpStatus.OK_200, response1.getStatus());
+        assertEquals(HttpStatus.OK_200, response2.getStatus());
+        assertEquals(HttpStatus.OK_200, response3.getStatus());
+
+        // AND the log file is created within a few seconds
+        waitUntil(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return logFile.exists();
+            }
+        }, 2_000L);
+
+        // AND the log file contains the expected contents
+        List<String> lines = Files.readAllLines(logFile.toPath(), Charset.defaultCharset());
+
+        assertThat(lines.size(), equalTo(3));
+        assertThat(lines.get(0), containsString("/whatever"));
+        assertThat(lines.get(1), containsString("/ignore"));
+        assertThat(lines.get(2), containsString("/build.gradle"));
     }
 
 }

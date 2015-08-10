@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 public abstract class EasyJettyTest {
 
@@ -74,6 +75,19 @@ public abstract class EasyJettyTest {
             buffer.append(chars.get(index).charValue());
         }
         return buffer.toString();
+    }
+
+    public static void waitUntil(Callable<Boolean> condition, long timeout)
+            throws Exception {
+        long maxTime = System.currentTimeMillis() + timeout;
+        boolean success;
+        while (!(success = condition.call()) &&
+                System.currentTimeMillis() < maxTime) {
+            Thread.sleep(100);
+        }
+        if (!success) {
+            throw new AssertionError("Condition not satisfied in time");
+        }
     }
 
     static class Chars {
