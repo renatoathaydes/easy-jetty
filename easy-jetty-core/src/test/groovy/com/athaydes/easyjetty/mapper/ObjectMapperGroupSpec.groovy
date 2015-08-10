@@ -252,7 +252,7 @@ class ObjectMapperGroupSpec extends Specification {
         def mapper = Stub(ObjectMapper)
         mapper.contentType >> 'text/json'
         mapper.mappedType >> String
-        mapper.unmap('example') >> 'example result'
+        mapper.unmap('example', String) >> 'example result'
         def mapperGroup = new ObjectMapperGroup(false, false).withMappers(mapper)
 
         when:
@@ -347,6 +347,11 @@ class PersonObjectMapper extends ObjectSerializer<Person> {
     Person unmap(String objectAsString) {
         new Person(name: objectAsString, age: -1)
     }
+
+    @Override
+    def <S> S unmap(String objectAsString, Class<S> type) {
+        type.cast(unmap(objectAsString))
+    }
 }
 
 class AnimalObjectMapper extends ObjectSerializer<Animal> {
@@ -361,5 +366,10 @@ class AnimalObjectMapper extends ObjectSerializer<Animal> {
     @Override
     Animal unmap(String objectAsString) {
         new DomesticCat(objectAsString)
+    }
+
+    @Override
+    def <S> S unmap(String objectAsString, Class<S> type) {
+        type.cast(unmap(objectAsString))
     }
 }

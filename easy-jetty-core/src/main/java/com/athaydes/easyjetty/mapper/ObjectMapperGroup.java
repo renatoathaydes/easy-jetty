@@ -35,6 +35,9 @@ public class ObjectMapperGroup {
 
         @Override
         public <S> S unmap(String objectAsString, Class<S> type) {
+            if (type.equals(String.class)) {
+                return type.cast(objectAsString);
+            }
             if (type.equals(Integer.class)) {
                 return type.cast(Integer.valueOf(objectAsString));
             }
@@ -53,7 +56,7 @@ public class ObjectMapperGroup {
             if (type.equals(Character.class) && objectAsString.length() == 1) {
                 return type.cast(objectAsString.charAt(0));
             }
-            return super.unmap(objectAsString, type);
+            throw new ClassCastException("Cannot cast object to " + type.getName());
         }
 
         @Override
