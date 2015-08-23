@@ -15,14 +15,12 @@ public interface Responder {
 
     class Exchange extends ExchangeBase {
         public final Request baseRequest;
-        public final Map<String, String> params;
         public final String acceptedContentType;
 
         Exchange(ServletOutputStream out, HttpServletRequest request, HttpServletResponse response,
                  Request baseRequest, Map<String, String> parameters, ObjectSupport objectSupport, String acceptedContentType) {
-            super(out, request, response, objectSupport);
+            super(out, request, response,  parameters, objectSupport);
             this.baseRequest = baseRequest;
-            this.params = parameters;
             this.acceptedContentType = acceptedContentType;
         }
 

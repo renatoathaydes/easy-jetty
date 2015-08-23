@@ -1,5 +1,6 @@
 package com.athaydes.easyjetty;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -7,14 +8,19 @@ import java.util.Map;
 public class PathHelper {
 
     public static String sanitize(String path) {
+        path = path.trim();
         if (!path.startsWith("/")) {
             path = "/" + path;
         }
-        return path.trim();
+        return path;
     }
 
     static HandlerPath handlerPath(String path) {
-        return handlerPath(sanitize(path).split("/"));
+        String[] pathParts = sanitize(path).split("/");
+        if (pathParts.length == 0) {
+            return HandlerPath.empty();
+        }
+        return handlerPath(pathParts);
     }
 
     static HandlerPath handlerPath(String... paths) {

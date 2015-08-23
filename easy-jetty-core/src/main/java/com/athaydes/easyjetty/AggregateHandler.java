@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.athaydes.easyjetty.Filter.FilterAdapter.filterAsHandler;
 import static com.athaydes.easyjetty.PathHelper.handlerPath;
 
 class AggregateHandler extends AbstractHandlerContainer {
@@ -52,6 +53,11 @@ class AggregateHandler extends AbstractHandlerContainer {
 
     public void add(HandlerPath handlerPath, UserHandler handler) {
         handlers.put(handlerPath, handler);
+    }
+
+    public void addFilter(HandlerPath handlerPath, Filter filter, ObjectSupport objectSupport) {
+        handlers.putFirst(handlerPath, filterAsHandler(filter,
+                handlerPath.getParametersByIndex(), objectSupport));
     }
 
     public void clear() {

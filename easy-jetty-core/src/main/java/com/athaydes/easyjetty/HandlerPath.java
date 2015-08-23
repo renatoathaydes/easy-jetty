@@ -11,6 +11,8 @@ import static com.athaydes.easyjetty.PathHelper.isParam;
 
 class HandlerPath {
 
+    private static final HandlerPath empty = new HandlerPath();
+
     private final String[] paths;
 
     HandlerPath(String... paths) {
@@ -25,10 +27,13 @@ class HandlerPath {
     }
 
     public String head() {
-        return paths[0];
+        return paths.length == 0 ? "" : paths[0];
     }
 
     public HandlerPath tail() {
+        if (paths.length < 1) {
+            return this;
+        }
         return handlerPath(Arrays.copyOfRange(paths, 1, paths.length));
     }
 
@@ -78,5 +83,9 @@ class HandlerPath {
             }
         }
         return result;
+    }
+
+    public static HandlerPath empty() {
+        return empty;
     }
 }

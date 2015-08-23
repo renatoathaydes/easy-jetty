@@ -409,7 +409,6 @@ public class EasyJettyHandlersTest extends EasyJettyTest {
 
     @Test
     public void primitiveMapperTest() throws Exception {
-        //TODO
         easy.on(POST, "/integer", new Responder() {
             @Override
             public void respond(Exchange exchange) throws IOException {

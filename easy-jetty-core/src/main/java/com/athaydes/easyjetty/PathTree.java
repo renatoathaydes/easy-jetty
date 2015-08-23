@@ -1,12 +1,6 @@
 package com.athaydes.easyjetty;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * A Tree specialized for paths.
@@ -22,7 +16,15 @@ class PathTree<V> {
         }
     }
 
+    void putFirst(HandlerPath key, V value) {
+        put(key, value, true);
+    }
+
     void put(HandlerPath key, V value) {
+        put(key, value, false);
+    }
+
+    private void put(HandlerPath key, V value, boolean addFirst) {
         Objects.requireNonNull(value);
 
         Node child = root, current;
@@ -43,7 +45,11 @@ class PathTree<V> {
         }
 
         size++;
-        child.values.add(value);
+        if (addFirst) {
+            child.values.add(0, value);
+        } else {
+            child.values.add(value);
+        }
     }
 
     /**
@@ -142,7 +148,7 @@ class PathTree<V> {
         void clear() {
             this.children = new HashMap<>(3);
             this.param = null;
-            this.values = new ArrayList<>(2);
+            this.values = new LinkedList();
             this.depth = -1;
         }
 

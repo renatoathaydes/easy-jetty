@@ -6,6 +6,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -15,13 +16,17 @@ public abstract class ExchangeBase {
     public final ServletOutputStream out;
     public final HttpServletRequest request;
     public final HttpServletResponse response;
+    public final Map<String, String> params;
     private final ObjectSupport objectSupport;
 
     ExchangeBase(ServletOutputStream out, HttpServletRequest request,
-                 HttpServletResponse response, ObjectSupport objectSupport) {
+                 HttpServletResponse response,
+                 Map<String, String> params,
+                 ObjectSupport objectSupport) {
         this.out = out;
         this.request = request;
         this.response = response;
+        this.params = params;
         this.objectSupport = objectSupport;
     }
 

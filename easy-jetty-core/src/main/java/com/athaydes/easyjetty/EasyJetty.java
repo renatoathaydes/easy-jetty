@@ -15,10 +15,12 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
-import javax.servlet.DispatcherType;
 import javax.servlet.Servlet;
 import java.net.BindException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.athaydes.easyjetty.PathHelper.handlerPath;
 import static com.athaydes.easyjetty.PathHelper.sanitize;
@@ -32,7 +34,7 @@ public class EasyJetty {
     private final CanChangeWhenServerNotRunningProperties notRunningProperties = new CanChangeWhenServerNotRunningProperties();
 
     private final Map<String, Object> servlets = new HashMap<>(5);
-    private final Map<String, Filter> filters = new HashMap<>(2);
+    private final Map<HandlerPath, Filter> filters = new HashMap<>(2);
     private final AggregateHandler aggregateHandler = new AggregateHandler(this);
     private final ObjectSupport objectSupport = new ObjectSupport(this);
     private final List<EasyJettyExtension> extensions = new ArrayList<>(2);
@@ -154,8 +156,16 @@ public class EasyJetty {
         return this;
     }
 
+    /**
+     * Add a filter.
+     *
+     * @param path   to be filtered.
+     * @param filter to be added.
+     * @return this
+     */
     public EasyJetty filterOn(String path, Filter filter) {
-        filters.put(sanitize(path), filter);
+        HandlerPath handlerPath = handlerPath(path);
+        filters.put(handlerPath, filter);
         return this;
     }
 
@@ -535,22 +545,9 @@ public class EasyJetty {
     }
 
     private void initializeFilters() {
-        for (Map.Entry<String, Filter> filterEntry : filters.entrySet()) {
-            Filter filter = filterEntry.getValue();
-            EnumSet<DispatcherType> dispatcherTypes = EnumSet.of(DispatcherType.REQUEST);
-            if (filter instanceof FilterWithDispatchTypes) {
-                DispatcherType[] types = ((FilterWithDispatchTypes) filter).getDispatchTypes();
-                if (types != null && types.length > 0) {
-                    dispatcherTypes = EnumSet.of(types[0]);
-                    for (int i = 1; i < types.length; i++) {
-                        dispatcherTypes.add(types[i]);
-                    }
-                }
-            }
-            servletHandler.addFilter(
-                    Filter.FilterAdapter.asFilterHolder(filter, objectSupport),
-                    filterEntry.getKey(),
-                    dispatcherTypes);
+        for (Map.Entry<HandlerPath, Filter> filterEntry : filters.entrySet()) {
+            aggregateHandler.addFilter(filterEntry.getKey(),
+                    filterEntry.getValue(), objectSupport);
         }
     }
 
