@@ -198,7 +198,8 @@ public class ObjectMapperGroup {
     public <T> T unmap(String objectAsString, Class<T> type, String contentType) {
         ObjectMapper mapper = findMapperFor(contentType, type);
         if (mapper == PRIMITIVE_MAPPER) { // intentional ref check
-            if (Map.class.equals(type) && contentType.equals("application/x-www-form-urlencoded")) {
+            if (Map.class.equals(type) &&
+                    MIMEParse.isAccepted("application/x-www-form-urlencoded", contentType)) {
                 // special-case for forms
                 return type.cast(unmapFormData(objectAsString));
             }

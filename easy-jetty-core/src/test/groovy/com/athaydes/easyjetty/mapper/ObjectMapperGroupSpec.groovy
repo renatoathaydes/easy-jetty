@@ -166,7 +166,7 @@ class ObjectMapperGroupSpec extends Specification {
         def mapperGroup = new ObjectMapperGroup(true, true)
 
         when: 'unmapping example values that are Strings in html form format'
-        Map result = mapperGroup.unmap(value, Map, 'application/x-www-form-urlencoded')
+        Map result = mapperGroup.unmap(value, Map, 'application/x-www-form-urlencoded; charset=UTF-8')
 
         then: 'the result is a Map with the form entries'
         result.isEmpty() && expected.isEmpty() || result == expected
