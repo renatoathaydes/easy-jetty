@@ -23,6 +23,7 @@ class EasyJettyErrorHandler extends ErrorHandler {
 
     public EasyJettyErrorHandler(EasyJetty easyJetty) {
         this.easyJetty = easyJetty;
+        setServer(easyJetty.getServer());
     }
 
     @Override
